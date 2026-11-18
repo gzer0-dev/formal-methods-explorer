@@ -41,7 +41,7 @@ function runAlloy(command, options) {
   );
 }
 
-/** 解を全部列挙して数える。-y 0 で対称性の除去を切る（切らないと、互いに入れ替えただけの形を1つにまとめてしまう）。 */
+/** 解を全部列挙して数える。-y 0 で対称性の除去を切る（一般には入れ替えただけの形をまとめるため。このモデルでは数は変わらない）。 */
 function countInstances(command) {
   return (runAlloy(command, ["-q", "-r", "0", "-y", "0"]).match(/---Trace---/g) ?? [])
     .length;
