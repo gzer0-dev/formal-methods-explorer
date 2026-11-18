@@ -18,7 +18,8 @@
     "check:site": "node scripts/check-site.mjs",
     "verify": "npm run typecheck && npm run check:layers && npm run lint && npm run format && npm test && npm run build && npm run check:site",
     "dump:text": "node scripts/dump-text.mjs",
-    "check:tla": "node specs/tla/check-tlc.mjs"
+    "check:tla": "node specs/tla/check-tlc.mjs",
+    "check:alloy": "node specs/alloy/check-alloy.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

@@ -39,6 +39,13 @@
 - TLA+ の文字列には日本語を書けない（字句エラーになる）。レッスンで TLA+ の式を見せるときは英字の名前にし、実際に specs/tla で通る形にする。
 - モデル（`src/topic/models.ts`）を変えたら、TLA+ の仕様と `check-tlc.mjs` の期待値も合わせて直す。
 
+## Alloy との照合（specs/alloy）
+
+- `specs/alloy/Boss.als` に上司の関係を Alloy 6 で書いてある。`npm run check:alloy` が形の数（64・27・16）と反例の数（48・11・0）、
+  check の結果（制約2つで UNSAT）を照合する（9件）。CI でも公開前に走る。手元の jar は `~/.local/share/alloy/org.alloytools.alloy.dist.jar`（6.2.0）。
+- **数え方の罠**: 解を全列挙して数えるときは `-y 0`（対称性の除去を切る）が要る。性質を `some p: Person | …` と書くと
+  Alloy は p をスコーレム化し、同じ形を「どの p が当てはまるか」ごとに別の解として数える（48 が 78、11 が 24 になった）。集合の内包で書く。
+
 ## 公開
 
 - 公開先: https://gzer0-dev.github.io/formal-methods-explorer/ （GitHub Pages、リポジトリは公開）。

@@ -4,6 +4,8 @@
 テストへ落とすまでを、1ステップずつ動く図で追える学習サイト。図に出る状態数や反例は、ページの中で動く小さなモデル検査器が実際に計算している。
 
 - TypeScript + Vite。実行時の依存ライブラリなし
+- 同じモデルを [TLA+](specs/tla) と [Alloy](specs/alloy) でも書き、TLC と Alloy Analyzer の結果がサイトの数字と一致することを CI で照合している（`npm run check:tla` / `npm run check:alloy`、Java が要る）
+- 公開先: https://gzer0-dev.github.io/formal-methods-explorer/
 - `~/Projects/explainer-template` から派生
 
 ```bash
