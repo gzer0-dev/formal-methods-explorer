@@ -1,0 +1,900 @@
+/*
+ * 共有の配置と部品の形。色・書体・角の丸さは src/topic/theme.css の変数で決まる。
+ * 題材ごとの見た目を変えたいときは、このファイルではなく theme.css を書き換える。
+ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+h1,
+h2,
+h3,
+h4,
+p,
+dl,
+dd,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button:focus-visible,
+tr:focus-visible,
+input:focus-visible,
+.seq-step:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+.icon {
+  width: 1.5em;
+  height: 1.5em;
+  flex: none;
+}
+
+/* ---- 全体の配置 ---- */
+
+.app {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  grid-template-areas:
+    "header header header"
+    "lessons main side";
+  gap: 14px;
+  max-width: 1560px;
+  margin: 0 auto;
+  padding: 14px;
+}
+
+.app-header {
+  grid-area: header;
+}
+
+.lessons {
+  grid-area: lessons;
+  align-self: start;
+  position: sticky;
+  top: 14px;
+  max-height: calc(100vh - 28px);
+  overflow-y: auto;
+}
+
+.main {
+  grid-area: main;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.side {
+  grid-area: side;
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+/* ---- ヘッダー ---- */
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-mark {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 18px;
+}
+
+.brand h1 {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.3;
+  letter-spacing: 0.02em;
+}
+
+.brand p {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+/* ---- レッスンの一覧 ---- */
+
+.lesson-group + .lesson-group {
+  margin-top: 14px;
+}
+
+.lesson-group h2 {
+  padding: 0 6px 4px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.lesson-button {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: none;
+  text-align: left;
+}
+
+.lesson-button:hover {
+  background: var(--panel);
+}
+
+.lesson-button[aria-current="true"] {
+  background: var(--panel);
+  border-color: var(--accent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.lesson-number {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin-top: 2px;
+  border-radius: 50%;
+  background: var(--line);
+  font-family: var(--font-code);
+  font-size: 12px;
+  line-height: 22px;
+  text-align: center;
+}
+
+.lesson-button[aria-current="true"] .lesson-number {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.lesson-names {
+  display: grid;
+  min-width: 0;
+}
+
+.lesson-names strong {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.lesson-names small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+/* ---- 図のパネル ---- */
+
+.viewer {
+  overflow: hidden;
+}
+
+.viewer-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px 10px;
+}
+
+.viewer-head h2 {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.lesson-subtitle {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.view-tabs {
+  display: flex;
+  flex: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.view-tabs button {
+  padding: 5px 12px;
+  border: 0;
+  background: none;
+  font-size: 13px;
+}
+
+.view-tabs button[aria-selected="true"] {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.stage {
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--stage-bg);
+  border-block: 1px solid var(--line);
+}
+
+.stage-sizer {
+  position: relative;
+  margin: 0 auto;
+}
+
+.stage-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.stage-wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.wire {
+  stroke: var(--line-strong);
+  stroke-width: 1.5;
+  stroke-dasharray: 2 6;
+  stroke-linecap: round;
+}
+
+.wire {
+  transition: opacity 0.35s ease;
+}
+
+.wire.is-live,
+.wire.is-hidden {
+  opacity: 0;
+}
+
+.flow {
+  stroke: var(--kind-color);
+  stroke-width: 2.5;
+  stroke-dasharray: 8 7;
+  stroke-linecap: round;
+  animation: flow-dash 0.9s linear infinite;
+}
+
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -15;
+  }
+}
+
+.token {
+  position: absolute;
+  z-index: 3;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--panel);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.actor {
+  position: absolute;
+  z-index: 1;
+  width: 176px;
+  padding: 9px 11px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  transform: translate(-50%, -50%);
+  transition:
+    opacity 0.35s ease,
+    transform 0.35s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    background 0.25s ease;
+}
+
+.actor.is-hidden {
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.86);
+  pointer-events: none;
+}
+
+.actor.tone-ok {
+  border-color: var(--ok);
+  background: var(--ok-soft);
+}
+
+.actor.tone-bad {
+  border-color: var(--bad);
+  background: var(--bad-soft);
+}
+
+.actor.tone-wait {
+  border-style: dashed;
+  border-color: var(--wait);
+}
+
+.actor.is-acting {
+  z-index: 2;
+  box-shadow:
+    0 0 0 3px var(--kind-color),
+    0 8px 20px rgb(0 0 0 / 14%);
+}
+
+.actor.is-receiving {
+  z-index: 2;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--kind-color) 45%, transparent);
+}
+
+.actor-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.actor-names {
+  display: grid;
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.actor-names strong {
+  font-size: 14px;
+}
+
+.actor-names span {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+}
+
+.actor-rows {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 1px 8px;
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.actor-rows:not(:empty) {
+  margin-top: 7px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+}
+
+.actor-rows dt {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.actor-rows dd {
+  font-family: var(--font-code);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  border-radius: 3px;
+}
+
+.actor-rows dd.is-changed {
+  animation: row-flash 1.4s ease-out;
+}
+
+@keyframes row-flash {
+  from {
+    background: var(--kind-color);
+    color: var(--panel);
+  }
+}
+
+/* ---- シーケンス図 ---- */
+
+.sequence {
+  overflow: auto;
+  max-height: 560px;
+  padding: 8px 12px;
+  background: var(--stage-bg);
+  border-block: 1px solid var(--line);
+}
+
+.sequence-svg {
+  display: block;
+  margin: 0 auto;
+}
+
+.seq-actor {
+  fill: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.seq-lifeline {
+  stroke: var(--line-strong);
+  stroke-dasharray: 3 5;
+}
+
+.seq-step {
+  cursor: pointer;
+}
+
+.seq-hit {
+  fill: transparent;
+}
+
+.seq-step:hover .seq-hit,
+.seq-step.is-current .seq-hit {
+  fill: color-mix(in srgb, var(--kind-color) 12%, transparent);
+}
+
+.seq-step.is-future {
+  opacity: 0.32;
+}
+
+.seq-arrow {
+  stroke: var(--kind-color);
+  stroke-width: 2;
+}
+
+.seq-head {
+  fill: var(--kind-color);
+}
+
+.seq-label,
+.seq-note-text {
+  fill: var(--ink);
+  font-size: 12px;
+}
+
+/* 題が列の幅より長いと隣の縦線にかかる。文字の縁を地の色で抜いて、線が文字を貫かないようにする。 */
+.seq-label {
+  paint-order: stroke;
+  stroke: var(--stage-bg);
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+.seq-note {
+  fill: var(--card);
+  stroke: var(--kind-color);
+  stroke-width: 1.5;
+}
+
+/* ---- 字幕 ---- */
+
+.caption {
+  min-height: 108px;
+  padding: 12px 16px 14px;
+}
+
+.caption-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.caption-head strong {
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+
+.simplified {
+  margin-top: 6px;
+  padding: 4px 9px;
+  border-left: 3px solid var(--wait);
+  background: var(--wait-soft);
+  font-size: 13px;
+}
+
+.kind-badge {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--kind-color) 16%, transparent);
+  border: 1px solid var(--kind-color);
+  font-size: 11.5px;
+  line-height: 1.7;
+  white-space: nowrap;
+}
+
+/* ---- 一覧と操作 ---- */
+
+.timeline-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 16px 8px;
+}
+
+.timeline-head h2 {
+  font-family: var(--font-display);
+  font-size: 17px;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.legend li::before {
+  content: "";
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--kind-color);
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.step-counter {
+  margin-right: 4px;
+  color: var(--ink-soft);
+  font-family: var(--font-code);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.control {
+  min-height: 34px;
+  padding: 4px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.control:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.control:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.control-toggle {
+  min-width: 86px;
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.control-toggle.is-inviting {
+  animation: invite 1.8s ease-in-out infinite;
+}
+
+@keyframes invite {
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 28%, transparent);
+  }
+}
+
+.table-scroll {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+th {
+  padding: 5px 12px;
+  border-block: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
+}
+
+td {
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+}
+
+tbody tr {
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+tbody tr:hover {
+  background: var(--stage-bg);
+}
+
+tbody tr.is-future {
+  opacity: 0.45;
+}
+
+tbody tr[aria-current="step"] {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+
+.cell-number {
+  font-family: var(--font-code);
+  color: var(--ink-soft);
+}
+
+.cell-where {
+  white-space: nowrap;
+}
+
+.key-hint {
+  padding: 8px 16px 10px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+/* ---- 右の欄 ---- */
+
+.side-section {
+  padding: 14px 16px;
+}
+
+.side-section h3 {
+  margin-bottom: 6px;
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.side-section > p {
+  font-size: 14px;
+}
+
+.detail-section + .detail-section {
+  margin-top: 12px;
+}
+
+.detail-section h4 {
+  margin-bottom: 2px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  letter-spacing: 0.06em;
+}
+
+.fields {
+  display: grid;
+  grid-template-columns: minmax(72px, auto) minmax(0, 1fr);
+  margin-top: 8px;
+  font-size: 13px;
+}
+
+.fields dt,
+.fields dd {
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+}
+
+.fields dt {
+  padding-right: 12px;
+  color: var(--ink-soft);
+}
+
+.field-value {
+  overflow-wrap: anywhere;
+}
+
+.field-value.is-code {
+  font-family: var(--font-code);
+  font-size: 12px;
+}
+
+.field-value.tone-ok {
+  color: var(--ok);
+  font-weight: 600;
+}
+
+.field-value.tone-bad {
+  color: var(--bad);
+  font-weight: 600;
+}
+
+.field-note {
+  display: block;
+  color: var(--ink-soft);
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.lab-input {
+  display: grid;
+  gap: 2px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.lab-input input {
+  width: 100%;
+  padding: 7px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-family: var(--font-code);
+  font-size: 16px;
+}
+
+/* ---- 中くらいの幅: 右の欄を下へ ---- */
+
+@media (max-width: 1180px) {
+  .app {
+    grid-template-columns: 230px minmax(0, 1fr);
+    grid-template-areas:
+      "header header"
+      "lessons main"
+      "lessons side";
+  }
+
+  .side {
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  }
+}
+
+/* ---- スマホ: 1 列。レッスンは横に流し、操作は画面の下に固定する ---- */
+
+@media (max-width: 760px) {
+  .app {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "lessons"
+      "main"
+      "side";
+    gap: 10px;
+    padding: 10px 10px 76px;
+  }
+
+  .lessons {
+    position: static;
+    display: flex;
+    gap: 8px;
+    max-height: none;
+    margin-inline: -10px;
+    padding: 2px 10px 6px;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+  }
+
+  .lesson-group {
+    display: contents;
+  }
+
+  .lesson-group h2 {
+    display: none;
+  }
+
+  .lesson-button {
+    flex: none;
+    width: auto;
+    max-width: 240px;
+    border-color: var(--line);
+    background: var(--panel);
+    scroll-snap-align: start;
+  }
+
+  .lesson-names small {
+    display: none;
+  }
+
+  .viewer-head {
+    padding: 10px 12px 8px;
+  }
+
+  .viewer-head h2 {
+    font-size: 17px;
+  }
+
+  .caption {
+    padding: 10px 12px 12px;
+  }
+
+  .timeline-head {
+    padding: 10px 12px 6px;
+  }
+
+  .controls {
+    position: fixed;
+    z-index: 10;
+    inset: auto 0 0 0;
+    justify-content: center;
+    margin: 0;
+    padding: 9px 8px calc(9px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--line-strong);
+    background: var(--panel);
+  }
+
+  .control {
+    min-height: 44px;
+    padding: 4px 10px;
+  }
+
+  .key-hint {
+    display: none;
+  }
+
+  th,
+  td {
+    padding-inline: 8px;
+  }
+
+  /* 狭い幅では「どこで」を折り返して、説明の列に幅を回す。 */
+  .cell-where {
+    white-space: normal;
+  }
+
+  .cell-number,
+  th:first-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow,
+  .control-toggle.is-inviting,
+  .actor-rows dd.is-changed {
+    animation: none;
+  }
+
+  .actor {
+    transition: none;
+  }
+}

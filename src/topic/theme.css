@@ -1,0 +1,155 @@
+/*
+ * 形式手法版の見た目。題材は「作る前に設計図を書いて確かめる」なので、青焼きの設計図から色を取った。
+ *   - 地はプルシアンブルー、方眼は淡い水色の線、文字は製図用紙の白
+ *   - 反例（性質を破った状態）は製図の赤ペンの朱、確かめ済みはミント
+ *   - 見出しは角ゴシック（製図の表題欄）、状態や手順は等幅（桁と記号をそろえて見比べるため）
+ */
+
+:root {
+  --bg: #0e2b4b;
+  --panel: #12355b;
+  --card: #163f6b;
+  --stage-bg: #0f3156;
+  --ink: #eaf3ff;
+  --ink-soft: #a7c1dc;
+  --line: #2b5682;
+  --line-strong: #7aa3cc;
+  --accent: #8fd6ff;
+  --accent-ink: #0b2440;
+  --ok: #86e3b5;
+  --ok-soft: #1d4b52;
+  --bad: #ff8d6e;
+  --bad-soft: #53303d;
+  --wait: #ffd27a;
+  --wait-soft: #4a4232;
+
+  --kind-spec: #8fd6ff;
+  --kind-run: #c3b2ff;
+  --kind-explore: #62d3cb;
+  --kind-found: #ff8d6e;
+  --kind-fix: #86e3b5;
+  --kind-test: #ffd27a;
+
+  --radius: 2px;
+  --font-body: "Hiragino Sans", "Yu Gothic UI", "Noto Sans JP", system-ui, sans-serif;
+  --font-display:
+    "Hiragino Kaku Gothic StdN", "Hiragino Sans", "BIZ UDGothic", "Noto Sans JP",
+    sans-serif;
+  --font-code: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+
+  color-scheme: dark;
+}
+
+/* 図の地に設計図の方眼を引く（細い線を 16px ごと、太い線を 80px ごと）。 */
+.stage,
+.sequence {
+  background-image:
+    linear-gradient(to right, rgb(143 214 255 / 13%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(143 214 255 / 13%) 1px, transparent 1px),
+    linear-gradient(to right, rgb(143 214 255 / 6%) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(143 214 255 / 6%) 1px, transparent 1px);
+  background-size:
+    80px 80px,
+    80px 80px,
+    16px 16px,
+    16px 16px;
+}
+
+.brand h1 {
+  letter-spacing: 0.08em;
+}
+
+.brand-mark {
+  font-size: 24px;
+}
+
+/* カードは製図の部品枠のように、輪郭をはっきりさせる。 */
+.actor {
+  box-shadow: 0 0 0 1px rgb(143 214 255 / 18%);
+}
+
+/*
+ * 最初の数秒の動き: ヘッダーの印の点が幅優先の順（左 → 上下 → 右）に現れ、線でつながる。
+ * 最後の点は反例として朱に光り、そのあとはゆっくり明滅を繰り返す。
+ */
+.mark-node {
+  fill: currentColor;
+  fill-opacity: 0;
+  stroke-opacity: 0;
+  animation: mark-appear 0.4s ease-out forwards;
+}
+
+.mark-edge {
+  stroke-dasharray: 8;
+  stroke-dashoffset: 8;
+  animation: mark-draw 0.35s ease-out forwards;
+}
+
+.mark-n1 {
+  animation-delay: 0.2s;
+}
+.mark-e1,
+.mark-e2 {
+  animation-delay: 0.6s;
+}
+.mark-n2,
+.mark-n3 {
+  animation-delay: 0.95s;
+}
+.mark-e3 {
+  animation-delay: 1.4s;
+}
+.mark-n4 {
+  animation-delay: 1.75s;
+}
+
+.mark-bad {
+  stroke: var(--bad);
+  animation:
+    mark-appear 0.4s ease-out 1.75s forwards,
+    mark-alarm 3.2s ease-in-out 2.4s infinite;
+}
+
+@keyframes mark-appear {
+  from {
+    fill-opacity: 0;
+    stroke-opacity: 0;
+  }
+  to {
+    fill-opacity: 0.25;
+    stroke-opacity: 1;
+  }
+}
+
+@keyframes mark-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes mark-alarm {
+  0%,
+  100% {
+    fill: var(--bad);
+    fill-opacity: 0.25;
+  }
+  15% {
+    fill: var(--bad);
+    fill-opacity: 0.95;
+  }
+  35% {
+    fill: var(--bad);
+    fill-opacity: 0.25;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mark-node,
+  .mark-edge,
+  .mark-bad {
+    animation: none;
+    fill-opacity: 0.25;
+    stroke-opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
