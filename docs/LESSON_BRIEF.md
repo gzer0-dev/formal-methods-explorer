@@ -35,3 +35,12 @@
 ## 報告
 
 作ったファイル、各レッスンの id・title・category・ステップ数、使った計算関数、simplified に書いた要点、気になった点を短く。
+
+## CSP のレッスン（2026-11-18 追加）を書く担当へ
+
+- 使う計算: `src/topic/csp.ts`（explore・moves・traceTo・deadlocks・divergence・traceRefines・failuresRefines・acceptsTrace・procKey・TAU・TICK）と
+  `src/topic/cspModels.ts`（counterSystem・counterObserved・RESULT_SPEC・COUNTER_ENV・printerSpec・printerImpl・PRINTER_ENV・philosophers・PHILOSOPHER_ENV・jobSystem・JOB_ENV）。
+  期待値は `src/topic/csp.test.ts` と `src/topic/cspModels.test.ts` にある。数字・トレース・反例は必ずこれらの戻り値から埋め込む。
+- category は "csp"。参考文献は facts に `{ label: "参考文献", value: \`${CSP_BOOK} ○節\` }`の形で1行（CSP_BOOK は`../references` から import）。節番号は指示されたものだけを使う。
+- 書籍の文章・図・例は写さない（このサイトの例は自作）。書籍の内容を推測で書かない。CSP の記法を見せるときは、このサイトのモデル（cspModels.ts）に合わせた短い式にとどめ、simplified に「実物の CSPM（FDR の記法）とは書き方が違う」と添える。
+- イベント名（read.A.0 など）は画面ではそのまま見せてよいが、初出で意味を日本語で説明する。

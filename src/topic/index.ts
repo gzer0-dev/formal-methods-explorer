@@ -5,6 +5,13 @@ import { TOPIC_ICONS } from "./icons";
 import { bfsLesson } from "./lessons/bfs";
 import { counterexampleLesson } from "./lessons/counterexample";
 import { deadlockLesson } from "./lessons/deadlock";
+import { cspProcessLesson } from "./lessons/cspProcess";
+import { cspParallelLesson } from "./lessons/cspParallel";
+import { cspRefinementLesson } from "./lessons/cspRefinement";
+import { cspFailuresLesson } from "./lessons/cspFailures";
+import { cspDeadlockLesson } from "./lessons/cspDeadlock";
+import { cspLivelockLesson } from "./lessons/cspLivelock";
+import { cspToCodeLesson } from "./lessons/cspToCode";
 import { invariantLesson } from "./lessons/invariant";
 import { livenessLesson } from "./lessons/liveness";
 import { lostUpdateLesson } from "./lessons/lostUpdate";
@@ -36,6 +43,13 @@ export const topic: Topic = {
     livenessLesson,
     preconditionsLesson,
     smallScopeLesson,
+    cspProcessLesson,
+    cspParallelLesson,
+    cspRefinementLesson,
+    cspFailuresLesson,
+    cspDeadlockLesson,
+    cspLivelockLesson,
+    cspToCodeLesson,
     propertyTestLesson,
     traceToTestLesson,
     transitionCoverLesson,

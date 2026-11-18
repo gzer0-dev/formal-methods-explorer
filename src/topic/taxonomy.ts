@@ -15,5 +15,6 @@ export const CATEGORIES: Category[] = [
   { id: "basics", label: "なぜ形式手法か" },
   { id: "model", label: "モデル検査" },
   { id: "spec", label: "仕様と証明" },
+  { id: "csp", label: "プロセスで書く（CSP）" },
   { id: "testing", label: "テストへつなぐ" },
 ];

@@ -1,5 +1,8 @@
 import type { Lesson } from "../../core/types";
 import { CSP_BOOK } from "../references";
+import { cspDeadlockLesson } from "./cspDeadlock";
+import { cspFailuresLesson } from "./cspFailures";
+import { cspRefinementLesson } from "./cspRefinement";
 import { bfsLesson } from "./bfs";
 import { counterexampleLesson } from "./counterexample";
 import { invariantLesson } from "./invariant";
@@ -174,6 +177,18 @@ export const toolMapLesson: Lesson = {
                 "詳細化のほか、デッドロックが無いこと、ライブロック（外から見えない動きの無限ループ）が無いこと、決定的に動くこと",
             },
             { label: "参考文献", value: `${CSP_BOOK} 第3章・第6章・第7章` },
+            {
+              label: cspRefinementLesson.title,
+              value: "仕様もプロセスで書き、詳細化を調べる",
+            },
+            {
+              label: cspFailuresLesson.title,
+              value: "トレースでは見分けられない違いを拒否で見分ける",
+            },
+            {
+              label: cspDeadlockLesson.title,
+              value: "デッドロックをプロセスの組み合わせで見つける",
+            },
           ],
         },
       ],
