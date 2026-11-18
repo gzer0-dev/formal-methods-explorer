@@ -58,3 +58,92 @@ Job(k) = start -> (succeed -> SKIP
 JobUnlimited = Job(-1)
 JobUnlimitedHidden = Job(-1) \ {start, fail}
 JobLimitedHidden = Job(2) \ {start, fail}
+
+-- ---- 並べ替えネットワーク（値は 0 と 1）: src/topic/sortModels.ts と同じ ----
+-- サイトの in.0 / w.a / out.2 は、ここでは c.in0 / c.wa / c.out2 と書く。
+datatype Wire = in0 | in1 | in2 | wa | wb | wc | out0 | out1 | out2
+channel c : Wire.{0, 1}
+
+min(x, y) = if x < y then x else y
+max(x, y) = if x < y then y else x
+Emit(lo, hi, m, n) = c.lo.m -> c.hi.n -> SKIP [] c.hi.n -> c.lo.m -> SKIP
+Comp(a, b, lo, hi) = ([] x : {0, 1} @ c.a.x -> ([] y : {0, 1} @ c.b.y -> Emit(lo, hi, min(x, y), max(x, y))))
+                     [] ([] x : {0, 1} @ c.b.x -> ([] y : {0, 1} @ c.a.y -> Emit(lo, hi, min(y, x), max(y, x))))
+
+SortNet = (Comp(in0, in1, wa, wb) [| {| c.wb |} |] Comp(wb, in2, wc, out2)) [| {| c.wa, c.wc |} |] Comp(wa, wc, out0, out1)
+SortNetObserved = SortNet \ {| c.wa, c.wb, c.wc |}
+SortNetMissing = Comp(in0, in1, out0, wb) [| {| c.wb |} |] Comp(wb, in2, out1, out2)
+SortNetMissingObserved = SortNetMissing \ {| c.wb |}
+
+-- 逐次の仕様: 3つを（どの順でも）受け取ったら、並べた値を（どの順でも）出す。-1 はまだ受け取っていない印。
+SortOut(k) = (c.out0.(if k == 3 then 1 else 0) -> SKIP)
+             ||| (c.out1.(if k >= 2 then 1 else 0) -> SKIP)
+             ||| (c.out2.(if k >= 1 then 1 else 0) -> SKIP)
+SortIn(x0, x1, x2) = (x0 == -1 & ([] v : {0, 1} @ c.in0.v -> SortIn(v, x1, x2)))
+                     [] (x1 == -1 & ([] v : {0, 1} @ c.in1.v -> SortIn(x0, v, x2)))
+                     [] (x2 == -1 & ([] v : {0, 1} @ c.in2.v -> SortIn(x0, x1, v)))
+                     [] (x0 != -1 and x1 != -1 and x2 != -1 & SortOut(x0 + x1 + x2))
+SortSpec = SortIn(-1, -1, -1)
+
+-- ---- 失敗発散詳細化: 隠したリトライは、トレースと失敗では仕様を満たしても、発散で破れる ----
+SucceedSpec = succeed -> SKIP
+
+-- ---- 代数法則（src/topic/csp.test.ts と同じ組） ----
+channel lp, lq, la
+LawP = lp -> STOP
+LawQ = lq -> STOP
+ExtStopLeft = LawP [] STOP
+ExtSameLeft = (la -> LawP) [] (la -> LawQ)
+ExtSameRight = la -> (LawP |~| LawQ)
+PrefixExtLeft = la -> (LawP [] LawQ)
+
+-- ---- 抽象化: 哲学者0が左のフォークを取る・置くだけを残す（src/topic/cspCases.ts と同じ） ----
+FocusSpec = pick.0.0 -> put.0.0 -> FocusSpec
+FocusHidden(asym) = Dining(3, asym) \ diff({| pick, put |}, {pick.0.0, put.0.0})
+FocusSym = FocusHidden(0)
+FocusAsym = FocusHidden(1)
+
+-- ---- 食事する暗号学者（payer = -1 は誰も払っていない、leak = 1 なら暗号学者0の見たコインが漏れる） ----
+channel look : {0..2}.{0..2}.{0, 1}
+channel say : {0..2}.{0, 1}
+xor(a, b) = if a == b then 0 else 1
+Coin(j) = |~| v : {0, 1} @ look.j.j.v -> look.((j + 2) % 3).j.v -> STOP
+Crypt(i, paid) = [] a : {0, 1} @ look.i.i.a -> ([] b : {0, 1} @ look.i.((i + 1) % 3).b -> say.i.xor(xor(a, b), paid) -> STOP)
+Crypto(payer, leak) = ((||| i : {0..2} @ Crypt(i, if payer == i then 1 else 0))
+                       [| {| look |} |] (||| j : {0..2} @ Coin(j)))
+                      \ (if leak == 1 then diff({| look |}, {| look.0 |}) else {| look |})
+Paid0 = Crypto(0, 0)
+Paid1 = Crypto(1, 0)
+Paid2 = Crypto(2, 0)
+PaidNone = Crypto(-1, 0)
+Leak0 = Crypto(0, 1)
+Leak1 = Crypto(1, 1)
+Leak2 = Crypto(2, 1)
+
+-- ---- 送受信待ちの取り消し ----
+channel req, resp, done, timeout, cancel, work
+ClientWait = req -> resp -> done -> SKIP
+ClientTimeout = req -> (resp -> done -> SKIP [] timeout -> giveup -> SKIP)
+ClientCancel = req -> (resp -> done -> SKIP [] timeout -> cancel -> giveup -> SKIP)
+ServerPlain = req -> ((work -> resp -> SKIP) |~| SKIP)
+ServerCancel = req -> ((work -> (resp -> SKIP [] cancel -> SKIP)) |~| (cancel -> SKIP))
+CancelWait = ClientWait [| {req, resp, cancel} |] ServerPlain
+CancelTimeout = ClientTimeout [| {req, resp, cancel} |] ServerPlain
+CancelFixed = ClientCancel [| {req, resp, cancel} |] ServerCancel
+-- ProB は正しく終わった状態もデッドロックと報告し、最初に見つけた1件しか返さないので、
+-- 本物のデッドロックが隠れないよう、終わった後は idle を繰り返すようにして調べる。
+channel idle
+Idle = idle -> Idle
+CancelWaitIdle = CancelWait ; Idle
+CancelTimeoutIdle = CancelTimeout ; Idle
+CancelFixedIdle = CancelFixed ; Idle
+
+-- ---- 追加の照合: 外部選択の交換則と、上限付きジョブの仕様（succeed か giveup で終わる） ----
+ExtPQ = LawP [] LawQ
+ExtQP = LawQ [] LawP
+SucceedOrGiveUp = (succeed -> SKIP) |~| (giveup -> SKIP)
+-- 発散する仕様の後は何でもあり（csp.test.ts の例）
+channel tt, xx
+ChaosLoop = tt -> ChaosLoop
+DivergingSpec = ChaosLoop \ {tt}
+AnyImpl = xx -> STOP

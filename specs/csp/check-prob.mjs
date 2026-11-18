@@ -117,6 +117,201 @@ const cases = [
     run: () => runProb(["-csplivelock", "JobLimitedHidden"]),
     expect: succeeded,
   },
+  // 並べ替えネットワーク（サイトの in.0 / out.0 は CSPM では c.in0 / c.out0）
+  {
+    name: "並べ替え: 仕様 [F= ネットワーク",
+    run: () => runProb(["-cspref", "SortSpec", "[F=", "SortNetObserved"]),
+    expect: succeeded,
+  },
+  {
+    name: "並べ替え: ネットワーク [F= 仕様（等価）",
+    run: () => runProb(["-cspref", "SortNetObserved", "[F=", "SortSpec"]),
+    expect: succeeded,
+  },
+  {
+    name: "並べ替え: 仕様 [FD= ネットワーク",
+    run: () => runProb(["-cspref", "SortSpec", "[FD=", "SortNetObserved"]),
+    expect: succeeded,
+  },
+  {
+    name: "並べ替え: ネットワーク [FD= 仕様",
+    run: () => runProb(["-cspref", "SortNetObserved", "[FD=", "SortSpec"]),
+    expect: succeeded,
+  },
+  {
+    name: "並べ替え: 比較器を忘れた配線は [in.0.0, in.1.0, out.0.0] で仕様を破る",
+    run: () => runProb(["-cspref", "SortSpec", "[T=", "SortNetMissingObserved"]),
+    expect: failed,
+    trace: ["c.in0.0", "c.in1.0", "c.out0.0"],
+  },
+  // 失敗発散詳細化
+  {
+    name: "隠したリトライ: トレースでは仕様を満たす",
+    run: () => runProb(["-cspref", "SucceedSpec", "[T=", "JobUnlimitedHidden"]),
+    expect: succeeded,
+  },
+  {
+    name: "隠したリトライ: 失敗でも仕様を満たす",
+    run: () => runProb(["-cspref", "SucceedSpec", "[F=", "JobUnlimitedHidden"]),
+    expect: succeeded,
+  },
+  {
+    name: "隠したリトライ: 失敗発散では破れる",
+    run: () => runProb(["-cspref", "SucceedSpec", "[FD=", "JobUnlimitedHidden"]),
+    expect: failed,
+  },
+  // 代数法則
+  {
+    name: "法則 P □ STOP = P（左 ⊑FD 右）",
+    run: () => runProb(["-cspref", "ExtStopLeft", "[FD=", "LawP"]),
+    expect: succeeded,
+  },
+  {
+    name: "法則 P □ STOP = P（右 ⊑FD 左）",
+    run: () => runProb(["-cspref", "LawP", "[FD=", "ExtStopLeft"]),
+    expect: succeeded,
+  },
+  {
+    name: "法則 (a→P)□(a→Q) = a→(P⊓Q)（左 ⊑FD 右）",
+    run: () => runProb(["-cspref", "ExtSameLeft", "[FD=", "ExtSameRight"]),
+    expect: succeeded,
+  },
+  {
+    name: "法則 (a→P)□(a→Q) = a→(P⊓Q)（右 ⊑FD 左）",
+    run: () => runProb(["-cspref", "ExtSameRight", "[FD=", "ExtSameLeft"]),
+    expect: succeeded,
+  },
+  {
+    name: "非法則 a→(P□Q) と (a→P)□(a→Q): トレースは等しい",
+    run: () => runProb(["-cspref", "PrefixExtLeft", "[T=", "ExtSameLeft"]),
+    expect: succeeded,
+  },
+  {
+    name: "非法則 a→(P□Q) と (a→P)□(a→Q): 失敗では破れる",
+    run: () => runProb(["-cspref", "PrefixExtLeft", "[F=", "ExtSameLeft"]),
+    expect: failed,
+  },
+  // 抽象化・匿名性
+  {
+    name: "抽象化: 哲学者0だけを見たトレースは小さな仕様と等しい（仕様 ⊑T）",
+    run: () => runProb(["-cspref", "FocusSpec", "[T=", "FocusSym"]),
+    expect: succeeded,
+  },
+  {
+    name: "抽象化: 同（逆向き）",
+    run: () => runProb(["-cspref", "FocusSym", "[T=", "FocusSpec"]),
+    expect: succeeded,
+  },
+  {
+    name: "抽象化: 全員左からは失敗詳細化で破れる（pick.0.0 の後）",
+    run: () => runProb(["-cspref", "FocusSpec", "[F=", "FocusSym"]),
+    expect: failed,
+    trace: ["pick.0.0"],
+  },
+  {
+    name: "抽象化: 1人逆順は失敗詳細化を満たす",
+    run: () => runProb(["-cspref", "FocusSpec", "[F=", "FocusAsym"]),
+    expect: succeeded,
+  },
+  {
+    name: "抽象化: 1人逆順でも、隠したことで失敗発散では破れる",
+    run: () => runProb(["-cspref", "FocusSpec", "[FD=", "FocusAsym"]),
+    expect: failed,
+  },
+  {
+    name: "匿名性: 0と1が払ったときは失敗まで等しい（0 ⊑F 1）",
+    run: () => runProb(["-cspref", "Paid0", "[F=", "Paid1"]),
+    expect: succeeded,
+  },
+  {
+    name: "匿名性: 同（1 ⊑F 0）",
+    run: () => runProb(["-cspref", "Paid1", "[F=", "Paid0"]),
+    expect: succeeded,
+  },
+  {
+    name: "匿名性: 1と2も等しい（1 ⊑F 2）",
+    run: () => runProb(["-cspref", "Paid1", "[F=", "Paid2"]),
+    expect: succeeded,
+  },
+  {
+    name: "匿名性: 同（2 ⊑F 1）",
+    run: () => runProb(["-cspref", "Paid2", "[F=", "Paid1"]),
+    expect: succeeded,
+  },
+  {
+    name: "匿名性: 誰も払っていないときとは区別できる",
+    run: () => runProb(["-cspref", "PaidNone", "[T=", "Paid0"]),
+    expect: failed,
+  },
+  {
+    name: "匿名性: コインが漏れると0と1は区別できる",
+    run: () => runProb(["-cspref", "Leak0", "[T=", "Leak1"]),
+    expect: failed,
+  },
+  {
+    name: "匿名性: コインが漏れても1と2は区別できない（1 ⊑T 2）",
+    run: () => runProb(["-cspref", "Leak1", "[T=", "Leak2"]),
+    expect: succeeded,
+  },
+  {
+    name: "匿名性: 同（2 ⊑T 1）",
+    run: () => runProb(["-cspref", "Leak2", "[T=", "Leak1"]),
+    expect: succeeded,
+  },
+  // 送受信待ちの取り消し（終わった後は idle を繰り返す版で、本物のデッドロックだけを見る）
+  {
+    name: "取り消し: 待ち続けると、依頼が落ちたときデッドロック",
+    run: () => runProb(["-cspdeadlock", "CancelWaitIdle", "F"]),
+    expect: failed,
+    trace: ["req", "DEADLOCKS"],
+  },
+  {
+    name: "取り消し: タイムアウトだけだと、遅れたサーバーが止まる",
+    run: () => runProb(["-cspdeadlock", "CancelTimeoutIdle", "F"]),
+    expect: failed,
+    trace: ["req", "timeout", "giveup", "work", "DEADLOCKS"],
+  },
+  {
+    name: "取り消し: タイムアウト＋取り消しはデッドロックしない",
+    run: () => runProb(["-cspdeadlock", "CancelFixedIdle", "F"]),
+    expect: succeeded,
+  },
+  // 追加の照合（交換則・上限付きジョブ・発散する仕様）
+  {
+    name: "法則 P □ Q = Q □ P（左 ⊑FD 右）",
+    run: () => runProb(["-cspref", "ExtPQ", "[FD=", "ExtQP"]),
+    expect: succeeded,
+  },
+  {
+    name: "法則 P □ Q = Q □ P（右 ⊑FD 左）",
+    run: () => runProb(["-cspref", "ExtQP", "[FD=", "ExtPQ"]),
+    expect: succeeded,
+  },
+  {
+    name: "上限付きジョブ: succeed か giveup の仕様を ⊑T で満たす",
+    run: () => runProb(["-cspref", "SucceedOrGiveUp", "[T=", "JobLimitedHidden"]),
+    expect: succeeded,
+  },
+  {
+    name: "上限付きジョブ: 同 ⊑F",
+    run: () => runProb(["-cspref", "SucceedOrGiveUp", "[F=", "JobLimitedHidden"]),
+    expect: succeeded,
+  },
+  {
+    name: "上限付きジョブ: 同 ⊑FD",
+    run: () => runProb(["-cspref", "SucceedOrGiveUp", "[FD=", "JobLimitedHidden"]),
+    expect: succeeded,
+  },
+  {
+    name: "上限付きジョブ: succeed だけの仕様にはトレースで破れる",
+    run: () => runProb(["-cspref", "SucceedSpec", "[T=", "JobLimitedHidden"]),
+    expect: failed,
+  },
+  {
+    name: "発散する仕様の後は何でもあり",
+    run: () => runProb(["-cspref", "DivergingSpec", "[FD=", "AnyImpl"]),
+    expect: succeeded,
+  },
 ];
 
 let failures = 0;

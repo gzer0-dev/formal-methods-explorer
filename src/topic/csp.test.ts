@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   acceptsTrace,
+  checkLaw,
+  failuresDivergencesRefines,
+  moves,
   deadlocks,
   divergence,
   explore,
@@ -135,5 +138,111 @@ describe("トレースを受け付けるか（テストの判定に使う）", (
     expect(acceptsTrace(hide(ref("P"), ["b"]), env, ["a", "a", "c"]).isAccepted).toBe(
       true,
     );
+  });
+});
+
+describe("遷移規則（どの規則で次の状態ができたか）", () => {
+  it("前置・外部選択・内部選択・名前の展開に、それぞれの規則名が付く", () => {
+    expect(moves(pre("a", STOP), {}).map((m) => m.rule)).toEqual(["Prefix"]);
+    expect(moves(ext(pre("a", STOP), pre("b", STOP)), {}).map((m) => m.rule)).toEqual([
+      "ExtCh1",
+      "ExtCh2",
+    ]);
+    expect(moves(int(pre("a", STOP), pre("b", STOP)), {}).map((m) => m.rule)).toEqual([
+      "IntCh1",
+      "IntCh2",
+    ]);
+    expect(moves(ref("P"), { P: () => pre("a", STOP) }).map((m) => m.rule)).toEqual([
+      "PName",
+    ]);
+  });
+
+  it("並行合成では、片側だけの動きと同期とで規則が分かれる", () => {
+    const rules = moves(
+      par(pre("a", STOP), ["s"], ext(pre("s", STOP), pre("b", STOP))),
+      {},
+    ).map((m) => m.rule);
+    expect(rules).toContain("Par1");
+    expect(rules).toContain("Par2");
+    expect(
+      moves(par(pre("s", STOP), ["s"], pre("s", STOP)), {}).map((m) => m.rule),
+    ).toEqual(["ParSync"]);
+  });
+
+  it("隠したイベントは隠蔽の規則で τ になる", () => {
+    expect(moves(hide(pre("a", STOP), ["a"]), {})).toEqual([
+      { ev: "τ", to: hide(STOP, ["a"]), rule: "Hide1" },
+    ]);
+  });
+});
+
+describe("失敗発散詳細化 Spec ⊑FD Impl", () => {
+  const env: Env = {
+    Job: () => pre("start", ext(pre("succeed", SKIP), pre("fail", ref("Job")))),
+  };
+  const spec = pre("succeed", SKIP);
+  const hidden = hide(ref("Job"), ["start", "fail"]);
+
+  it("発散する実装は、トレースと失敗では仕様を満たしても、発散で破れる", () => {
+    expect(traceRefines(spec, hidden, env).holds).toBe(true);
+    expect(failuresRefines(spec, hidden, env).holds).toBe(true);
+    expect(failuresDivergencesRefines(spec, hidden, env)).toEqual({
+      holds: false,
+      counterexample: { kind: "divergence", trace: [] },
+    });
+  });
+
+  it("仕様が発散するなら、その後は何をしても満たす（発散は「何でもあり」）", () => {
+    const chaotic = hide(ref("Loop"), ["t"]);
+    const loopEnv: Env = { Loop: () => pre("t", ref("Loop")) };
+    expect(failuresDivergencesRefines(chaotic, pre("x", STOP), loopEnv).holds).toBe(
+      true,
+    );
+  });
+
+  it("発散しなければ、失敗詳細化と同じ反例を返す", () => {
+    const result = failuresDivergencesRefines(
+      ext(pre("a", STOP), pre("b", STOP)),
+      int(pre("a", STOP), pre("b", STOP)),
+      {},
+    );
+    expect(result).toEqual({
+      holds: false,
+      counterexample: { kind: "failure", trace: [], refusal: ["b"] },
+    });
+  });
+});
+
+describe("代数法則を検査器で確かめる", () => {
+  const P = pre("p", STOP);
+  const Q = pre("q", STOP);
+
+  it("P □ STOP = P、P □ Q = Q □ P は、どの比べ方でも等しい", () => {
+    expect(checkLaw(ext(P, STOP), P, {})).toEqual({
+      traces: true,
+      failures: true,
+      failuresDivergences: true,
+    });
+    expect(checkLaw(ext(P, Q), ext(Q, P), {})).toEqual({
+      traces: true,
+      failures: true,
+      failuresDivergences: true,
+    });
+  });
+
+  it("(a → P) □ (a → Q) = a → (P ⊓ Q)（同じイベントの外部選択は、中身の内部選択になる）", () => {
+    expect(checkLaw(ext(pre("a", P), pre("a", Q)), pre("a", int(P, Q)), {})).toEqual({
+      traces: true,
+      failures: true,
+      failuresDivergences: true,
+    });
+  });
+
+  it("a → (P □ Q) と (a → P) □ (a → Q) はトレースでは等しいが、失敗では等しくない", () => {
+    expect(checkLaw(pre("a", ext(P, Q)), ext(pre("a", P), pre("a", Q)), {})).toEqual({
+      traces: true,
+      failures: false,
+      failuresDivergences: false,
+    });
   });
 });

@@ -3,7 +3,16 @@
 import type { Topic } from "../core/types";
 import { TOPIC_ICONS } from "./icons";
 import { bfsLesson } from "./lessons/bfs";
+import { caseDesignLesson } from "./lessons/caseDesign";
+import { caseVerifyLesson } from "./lessons/caseVerify";
+import { caseImplementLesson } from "./lessons/caseImplement";
 import { counterexampleLesson } from "./lessons/counterexample";
+import { cspFdLesson } from "./lessons/cspFd";
+import { cspLawsLesson } from "./lessons/cspLaws";
+import { cspRulesLesson } from "./lessons/cspRules";
+import { cspAbstractionLesson } from "./lessons/cspAbstraction";
+import { cspAnonymityLesson } from "./lessons/cspAnonymity";
+import { cspCancelLesson } from "./lessons/cspCancel";
 import { deadlockLesson } from "./lessons/deadlock";
 import { cspProcessLesson } from "./lessons/cspProcess";
 import { cspParallelLesson } from "./lessons/cspParallel";
@@ -49,7 +58,16 @@ export const topic: Topic = {
     cspFailuresLesson,
     cspDeadlockLesson,
     cspLivelockLesson,
+    cspFdLesson,
+    cspLawsLesson,
+    cspRulesLesson,
     cspToCodeLesson,
+    cspAbstractionLesson,
+    cspAnonymityLesson,
+    cspCancelLesson,
+    caseDesignLesson,
+    caseVerifyLesson,
+    caseImplementLesson,
     propertyTestLesson,
     traceToTestLesson,
     transitionCoverLesson,

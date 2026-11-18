@@ -80,6 +80,8 @@ export function procKey(p: Proc): string {
 export interface Move {
   ev: string;
   to: Proc;
+  /** この動きを作った遷移規則の名前（いちばん外側の演算子の規則。Roscoe の操作的意味論の呼び方に合わせる）。 */
+  rule: string;
 }
 
 function unfold(p: Extract<Proc, { k: "ref" }>, env: Env): Proc {
@@ -89,49 +91,80 @@ function unfold(p: Extract<Proc, { k: "ref" }>, env: Env): Proc {
 }
 
 /** 1手で起きうる動き（操作的意味論）。 */
+// 同じ状態の動きは、定義（env）が同じなら毎回同じなので、env ごとに覚えて使い回す。
+// 詳細化の比較では同じ状態を何度もたどるので、使い回さないと匿名性の例の比較が数百ミリ秒かかった。
+const movesCache = new WeakMap<Env, Map<string, Move[]>>();
+
 export function moves(p: Proc, env: Env): Move[] {
+  let cache = movesCache.get(env);
+  if (!cache) {
+    cache = new Map();
+    movesCache.set(env, cache);
+  }
+  const key = procKey(p);
+  const cached = cache.get(key);
+  if (cached) return cached;
+  const result = computeMoves(p, env);
+  cache.set(key, result);
+  return result;
+}
+
+function computeMoves(p: Proc, env: Env): Move[] {
   switch (p.k) {
     case "stop":
     case "omega":
       return [];
     case "skip":
-      return [{ ev: TICK, to: OMEGA }];
+      return [{ ev: TICK, to: OMEGA, rule: "Skip" }];
     case "prefix":
-      return [{ ev: p.ev, to: p.next }];
+      return [{ ev: p.ev, to: p.next, rule: "Prefix" }];
     case "ext": {
       // τ は選択を決めない（もう片方も残す）。見えるイベントか ✓ で選択が決まる。
       const left = moves(p.l, env).map((m) =>
-        m.ev === TAU ? { ev: TAU, to: ext(m.to, p.r) } : m,
+        m.ev === TAU
+          ? { ev: TAU, to: ext(m.to, p.r), rule: "ExtChTau1" }
+          : { ...m, rule: "ExtCh1" },
       );
       const right = moves(p.r, env).map((m) =>
-        m.ev === TAU ? { ev: TAU, to: ext(p.l, m.to) } : m,
+        m.ev === TAU
+          ? { ev: TAU, to: ext(p.l, m.to), rule: "ExtChTau2" }
+          : { ...m, rule: "ExtCh2" },
       );
       return [...left, ...right];
     }
     case "int":
       return [
-        { ev: TAU, to: p.l },
-        { ev: TAU, to: p.r },
+        { ev: TAU, to: p.l, rule: "IntCh1" },
+        { ev: TAU, to: p.r, rule: "IntCh2" },
       ];
     case "par": {
-      if (p.l.k === "omega" && p.r.k === "omega") return [{ ev: TICK, to: OMEGA }];
+      if (p.l.k === "omega" && p.r.k === "omega") {
+        return [{ ev: TICK, to: OMEGA, rule: "ParTerm" }];
+      }
       const sync = new Set(p.sync);
       const result: Move[] = [];
       const leftMoves = moves(p.l, env);
       const rightMoves = moves(p.r, env);
       for (const m of leftMoves) {
-        if (m.ev === TICK) result.push({ ev: TAU, to: par(OMEGA, p.sync, p.r) });
-        else if (!sync.has(m.ev)) result.push({ ev: m.ev, to: par(m.to, p.sync, p.r) });
+        if (m.ev === TICK) {
+          result.push({ ev: TAU, to: par(OMEGA, p.sync, p.r), rule: "ParTick1" });
+        } else if (!sync.has(m.ev)) {
+          result.push({ ev: m.ev, to: par(m.to, p.sync, p.r), rule: "Par1" });
+        }
       }
       for (const m of rightMoves) {
-        if (m.ev === TICK) result.push({ ev: TAU, to: par(p.l, p.sync, OMEGA) });
-        else if (!sync.has(m.ev)) result.push({ ev: m.ev, to: par(p.l, p.sync, m.to) });
+        if (m.ev === TICK) {
+          result.push({ ev: TAU, to: par(p.l, p.sync, OMEGA), rule: "ParTick2" });
+        } else if (!sync.has(m.ev)) {
+          result.push({ ev: m.ev, to: par(p.l, p.sync, m.to), rule: "Par2" });
+        }
       }
       for (const ml of leftMoves) {
         if (!sync.has(ml.ev)) continue;
         for (const mr of rightMoves) {
-          if (mr.ev === ml.ev)
-            result.push({ ev: ml.ev, to: par(ml.to, p.sync, mr.to) });
+          if (mr.ev === ml.ev) {
+            result.push({ ev: ml.ev, to: par(ml.to, p.sync, mr.to), rule: "ParSync" });
+          }
         }
       }
       return result;
@@ -139,16 +172,20 @@ export function moves(p: Proc, env: Env): Move[] {
     case "hide": {
       const hidden = new Set(p.set);
       return moves(p.p, env).map((m) => {
-        if (m.ev === TICK) return { ev: TICK, to: OMEGA };
-        return { ev: hidden.has(m.ev) ? TAU : m.ev, to: hide(m.to, p.set) };
+        if (m.ev === TICK) return { ev: TICK, to: OMEGA, rule: "HideTick" };
+        return hidden.has(m.ev)
+          ? { ev: TAU, to: hide(m.to, p.set), rule: "Hide1" }
+          : { ev: m.ev, to: hide(m.to, p.set), rule: "Hide2" };
       });
     }
     case "seq":
       return moves(p.l, env).map((m) =>
-        m.ev === TICK ? { ev: TAU, to: p.r } : { ev: m.ev, to: seq(m.to, p.r) },
+        m.ev === TICK
+          ? { ev: TAU, to: p.r, rule: "SeqTick" }
+          : { ev: m.ev, to: seq(m.to, p.r), rule: "Seq" },
       );
     case "ref":
-      return moves(unfold(p, env), env);
+      return moves(unfold(p, env), env).map((m) => ({ ...m, rule: "PName" }));
   }
 }
 
@@ -336,15 +373,23 @@ function walkPairs<C>(
   env: Env,
   onPair: (pair: Pair) => C | null,
   onTraceViolation: (trace: string[]) => C,
+  shouldPrune: (pair: Pair) => boolean = () => false,
 ): RefinementResult<C> {
   const start: Pair = { impl, spec: tauClosure([spec], env), trace: [] };
   const seen = new Set<string>();
+  // 「仕様のいまいうる状態の集まり」とイベントから次の集まりへの行き先を覚えておく。
+  // 実装の状態が違っても仕様の集まりは同じになりやすく、τ 閉包の計算を繰り返すと遅いため。
+  const nextSpec = new Map<string, Map<string, Proc>>();
+  const specKeyOf = (specStates: Map<string, Proc>) =>
+    [...specStates.keys()].sort().join("&");
   const queue = [start];
-  while (queue.length > 0) {
-    const pair = queue.shift()!;
-    const key = `${procKey(pair.impl)}|${[...pair.spec.keys()].sort().join("&")}`;
+  for (let head = 0; head < queue.length; head += 1) {
+    const pair = queue[head]!;
+    const specKey = specKeyOf(pair.spec);
+    const key = `${procKey(pair.impl)}|${specKey}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    if (shouldPrune(pair)) continue;
     const violation = onPair(pair);
     if (violation) return { holds: false, counterexample: violation };
     for (const m of moves(pair.impl, env)) {
@@ -352,7 +397,12 @@ function walkPairs<C>(
         queue.push({ impl: m.to, spec: pair.spec, trace: pair.trace });
         continue;
       }
-      const specNext = afterEvent(pair.spec, m.ev, env);
+      const cacheKey = `${specKey}|${m.ev}`;
+      let specNext = nextSpec.get(cacheKey);
+      if (!specNext) {
+        specNext = afterEvent(pair.spec, m.ev, env);
+        nextSpec.set(cacheKey, specNext);
+      }
       const trace = [...pair.trace, m.ev];
       if (specNext.size === 0)
         return { holds: false, counterexample: onTraceViolation(trace) };
@@ -377,6 +427,27 @@ export function traceRefines(
   );
 }
 
+/** 安定した実装の状態で、仕様にない拒否ができるか。できるならその反例。 */
+function stableFailureViolation(pair: Pair, env: Env): Failure | null {
+  if (!isStable(pair.impl, env)) return null;
+  const accepted = initials(pair.impl, env);
+  const stableSpecInitials = [...pair.spec.values()]
+    .filter((s) => isStable(s, env))
+    .map((s) => initials(s, env));
+  const specCanRefuse = stableSpecInitials.some((offered) =>
+    [...offered].every((ev) => accepted.has(ev)),
+  );
+  if (specCanRefuse) return null;
+  // 反例として見せるのは「仕様ならこの時点で必ず受け付けるのに、実装が拒否できるイベント」。
+  const mustAccept = [...(stableSpecInitials[0] ?? [])].filter((ev) =>
+    stableSpecInitials.every((offered) => offered.has(ev)),
+  );
+  return {
+    trace: pair.trace,
+    refusal: mustAccept.filter((ev) => !accepted.has(ev)).sort(),
+  };
+}
+
 /**
  * 失敗詳細化 Spec ⊑F Impl（安定失敗モデル）: トレースに加え、実装が安定した状態で拒否できるイベントの集まりを、
  * 仕様もその時点で拒否できるか。反例は、そのトレースと、実装だけが拒否できるイベントの集まり。
@@ -390,25 +461,7 @@ export function failuresRefines(
     spec,
     impl,
     env,
-    (pair) => {
-      if (!isStable(pair.impl, env)) return null;
-      const accepted = initials(pair.impl, env);
-      const stableSpecInitials = [...pair.spec.values()]
-        .filter((s) => isStable(s, env))
-        .map((s) => initials(s, env));
-      const specCanRefuse = stableSpecInitials.some((offered) =>
-        [...offered].every((ev) => accepted.has(ev)),
-      );
-      if (specCanRefuse) return null;
-      // 反例として見せるのは「仕様ならこの時点で必ず受け付けるのに、実装が拒否できるイベント」。
-      const mustAccept = [...(stableSpecInitials[0] ?? [])].filter((ev) =>
-        stableSpecInitials.every((offered) => offered.has(ev)),
-      );
-      return {
-        trace: pair.trace,
-        refusal: mustAccept.filter((ev) => !accepted.has(ev)).sort(),
-      };
-    },
+    (pair) => stableFailureViolation(pair, env),
     (trace) => ({ trace, refusal: [] }),
   );
 }
@@ -427,4 +480,111 @@ export function acceptsTrace(root: Proc, env: Env, trace: string[]): TraceCheck 
     if (current.size === 0) return { isAccepted: false, acceptedCount: index };
   }
   return { isAccepted: true, acceptedCount: trace.length };
+}
+
+/**
+ * τ だけをたどって、τ の輪に入れるか（その状態から発散できるか）。
+ * cache は1回の比較の中で使い回す（同じ状態を何度も調べると、組の数だけ深さ優先の探索が繰り返されて遅くなるため）。
+ */
+function canDiverge(start: Proc, env: Env, cache: Map<string, boolean>): boolean {
+  const onPath = new Set<string>();
+  const search = (p: Proc): boolean => {
+    const key = procKey(p);
+    const known = cache.get(key);
+    if (known !== undefined) return known;
+    if (onPath.has(key)) return true;
+    onPath.add(key);
+    let result = false;
+    for (const m of moves(p, env)) {
+      if (m.ev === TAU && search(m.to)) {
+        result = true;
+        break;
+      }
+    }
+    onPath.delete(key);
+    // 輪の途中で true が分かった状態も、輪に入れるので true として覚えてよい。
+    cache.set(key, result);
+    return result;
+  };
+  return search(start);
+}
+
+export type FdCounterexample =
+  | { kind: "trace"; trace: string[] }
+  | { kind: "divergence"; trace: string[] }
+  | { kind: "failure"; trace: string[]; refusal: string[] };
+
+/**
+ * 失敗発散詳細化 Spec ⊑FD Impl: 失敗詳細化に加え、実装が発散できるトレースでは仕様も発散できること。
+ * 仕様が発散した後は「何でもあり」（何をしても、何を拒否しても満たす）とみなし、その先は調べない（発散で厳密）。
+ */
+export function failuresDivergencesRefines(
+  spec: Proc,
+  impl: Proc,
+  env: Env,
+): RefinementResult<FdCounterexample> {
+  const cache = new Map<string, boolean>();
+  const specDiverges = (pair: Pair) =>
+    [...pair.spec.values()].some((s) => canDiverge(s, env, cache));
+  return walkPairs<FdCounterexample>(
+    spec,
+    impl,
+    env,
+    (pair) => {
+      if (canDiverge(pair.impl, env, cache))
+        return { kind: "divergence", trace: pair.trace };
+      const failure = stableFailureViolation(pair, env);
+      return failure ? { kind: "failure", ...failure } : null;
+    },
+    (trace) => ({ kind: "trace", trace }),
+    specDiverges,
+  );
+}
+
+export interface LawCheck {
+  traces: boolean;
+  failures: boolean;
+  failuresDivergences: boolean;
+}
+
+/** 2つのプロセスが等しいか（詳細化を両向きに調べる）を、3つの比べ方それぞれで答える。 */
+export function checkLaw(left: Proc, right: Proc, env: Env): LawCheck {
+  const both = (refines: (a: Proc, b: Proc, e: Env) => { holds: boolean }) =>
+    refines(left, right, env).holds && refines(right, left, env).holds;
+  return {
+    traces: both(traceRefines),
+    failures: both(failuresRefines),
+    failuresDivergences: both(failuresDivergencesRefines),
+  };
+}
+
+/**
+ * 最後まで動いた（もう何も起こせない）実行の、見えるイベントの並びを全部集める。
+ * 同じ状態から先の並びは1回だけ計算して使い回す。輪のあるプロセスでは終わらないので、輪を見つけたら例外にする。
+ */
+export function completeTraces(root: Proc, env: Env): string[][] {
+  const memo = new Map<string, string[][]>();
+  const onPath = new Set<string>();
+  const suffixes = (p: Proc): string[][] => {
+    const key = procKey(p);
+    const cached = memo.get(key);
+    if (cached) return cached;
+    if (onPath.has(key)) throw new Error("輪のあるプロセスには使えない");
+    onPath.add(key);
+    const next = moves(p, env);
+    const found = new Map<string, string[]>();
+    if (next.length === 0) found.set("", []);
+    for (const m of next) {
+      const isVisible = m.ev !== TAU && m.ev !== TICK;
+      for (const rest of suffixes(m.to)) {
+        const trace = isVisible ? [m.ev, ...rest] : rest;
+        found.set(trace.join(","), trace);
+      }
+    }
+    onPath.delete(key);
+    const result = [...found.values()];
+    memo.set(key, result);
+    return result;
+  };
+  return suffixes(root);
 }
