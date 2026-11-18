@@ -5,3 +5,6 @@ coverage
 .DS_Store
 tsconfig.tsbuildinfo
 docs/lesson-text.txt
+
+# ProB が CSPM を読んだときに作るキャッシュ
+*.csp.pl
