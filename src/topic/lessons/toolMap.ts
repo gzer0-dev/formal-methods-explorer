@@ -1,4 +1,15 @@
 import type { Lesson } from "../../core/types";
+import { bfsLesson } from "./bfs";
+import { counterexampleLesson } from "./counterexample";
+import { invariantLesson } from "./invariant";
+import { livenessLesson } from "./liveness";
+import { lostUpdateLesson } from "./lostUpdate";
+import { preconditionsLesson } from "./preconditions";
+import { propertyTestLesson } from "./propertyTest";
+import { smallScopeLesson } from "./smallScope";
+import { stateMachineLesson } from "./stateMachine";
+import { traceToTestLesson } from "./traceToTest";
+import { transitionCoverLesson } from "./transitionCover";
 
 // 計算を使わない地図のレッスン。道具の細かい記法は版によって変わるので書かず、
 // 「どの題材にどの種類の道具が向くか」と「このサイトのどのレッスンに対応するか」だけを示す。
@@ -78,7 +89,7 @@ export const toolMapLesson: Lesson = {
     },
     {
       id: "pbt",
-      label: "性質ベーステスト",
+      label: propertyTestLesson.title,
       sublabel: "fast-check・Hypothesis",
       icon: "dice",
       x: 86,
@@ -124,7 +135,10 @@ export const toolMapLesson: Lesson = {
         tla: {
           isHidden: false,
           tone: "ok",
-          rows: { 例: "更新が消える・デッドロック", 対応: "テストが見逃すバグ ほか" },
+          rows: {
+            例: "更新が消える・デッドロック",
+            対応: `${lostUpdateLesson.title} ほか`,
+          },
         },
       },
       detail: [
@@ -132,14 +146,17 @@ export const toolMapLesson: Lesson = {
           title: "このサイトで対応するレッスン",
           fields: [
             {
-              label: "テストが見逃すバグ",
+              label: lostUpdateLesson.title,
               value: "全部の順をたどって、更新が消える並びを見つける",
             },
-            { label: "状態を全部たどる", value: "幅優先で状態をたどる検査器のしくみ" },
-            { label: "反例を読む", value: "違反した状態から来た道をたどる" },
-            { label: "状態と遷移で書く", value: "注文を状態と操作で書く" },
-            { label: "不変条件を書く", value: "いつでも成り立つべき性質" },
-            { label: "いつか必ず終わるか", value: "活性（いつか良いことが起きる）" },
+            { label: bfsLesson.title, value: "幅優先で状態をたどる検査器のしくみ" },
+            {
+              label: counterexampleLesson.title,
+              value: "違反した状態から来た道をたどる",
+            },
+            { label: stateMachineLesson.title, value: "注文を状態と操作で書く" },
+            { label: invariantLesson.title, value: "いつでも成り立つべき性質" },
+            { label: livenessLesson.title, value: "活性（いつか良いことが起きる）" },
           ],
         },
       ],
@@ -160,14 +177,14 @@ export const toolMapLesson: Lesson = {
         alloy: {
           isHidden: false,
           tone: "ok",
-          rows: { 例: "上司の関係", 対応: "小さな範囲で全部調べる" },
+          rows: { 例: "上司の関係", 対応: smallScopeLesson.title },
         },
       },
       detail: [
         {
           title: "このサイトで対応するレッスン",
           fields: [
-            { label: "小さな範囲で全部調べる", value: "3人の上司の関係を全部作る" },
+            { label: smallScopeLesson.title, value: "3人の上司の関係を全部作る" },
           ],
         },
       ],
@@ -188,14 +205,14 @@ export const toolMapLesson: Lesson = {
         proof: {
           isHidden: false,
           tone: "ok",
-          rows: { 例: "引き出しの条件", 対応: "事前条件と事後条件" },
+          rows: { 例: "引き出しの条件", 対応: preconditionsLesson.title },
         },
       },
       detail: [
         {
           title: "このサイトで対応するレッスン",
           fields: [
-            { label: "事前条件と事後条件", value: "引き出しの関数に契約を書く" },
+            { label: preconditionsLesson.title, value: "引き出しの関数に契約を書く" },
           ],
         },
       ],
@@ -216,16 +233,19 @@ export const toolMapLesson: Lesson = {
         pbt: {
           isHidden: false,
           tone: "ok",
-          rows: { 例: "重複を取り除く関数", 対応: "性質ベーステスト ほか" },
+          rows: { 例: "重複を取り除く関数", 対応: `${propertyTestLesson.title} ほか` },
         },
       },
       detail: [
         {
           title: "このサイトで対応するレッスン",
           fields: [
-            { label: "性質ベーステスト", value: "性質を書き、反例を縮める" },
-            { label: "反例をテストにする", value: "動く順を固定して再現する" },
-            { label: "遷移を全部通すテスト", value: "モデルからテストの手順を作る" },
+            { label: propertyTestLesson.title, value: "性質を書き、反例を縮める" },
+            { label: traceToTestLesson.title, value: "動く順を固定して再現する" },
+            {
+              label: transitionCoverLesson.title,
+              value: "モデルからテストの手順を作る",
+            },
           ],
         },
       ],

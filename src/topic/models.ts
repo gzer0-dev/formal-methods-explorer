@@ -124,7 +124,7 @@ export function describeCounter(state: CounterState): string {
 export type LockName = "L1" | "L2";
 
 export interface LockState {
-  /** 0=1つ目待ち1=2つ目待ち2=両方持っている3=終わり */
+  /** 0=1つ目待ち、1=2つ目待ち、2=両方持っている、3=終わり */
   pcs: [number, number];
   owners: Record<LockName, string | null>;
 }

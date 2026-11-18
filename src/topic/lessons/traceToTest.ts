@@ -13,7 +13,7 @@ const FIXED_RESULT = runSchedule(FIXED_SCHEDULE, true);
 function parseSchedule(text: string | undefined): string[] {
   const steps = (text ?? "")
     .split(/[,、，]/)
-    .map((step) => step.trim())
+    .map((step) => step.replace(/\s+/g, "")) // 「A が読む」と空白入りで打っても通す
     .filter((step) => step.length > 0);
   return steps.length > 0 ? steps : SCHEDULE;
 }
