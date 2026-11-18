@@ -7,6 +7,14 @@ import { caseDesignLesson } from "./lessons/caseDesign";
 import { caseVerifyLesson } from "./lessons/caseVerify";
 import { caseImplementLesson } from "./lessons/caseImplement";
 import { counterexampleLesson } from "./lessons/counterexample";
+import { cspDeterminismLesson } from "./lessons/cspDeterminism";
+import { cspLazyLesson } from "./lessons/cspLazy";
+import { cspSharedLesson } from "./lessons/cspShared";
+import { cspChannelPassingLesson } from "./lessons/cspChannelPassing";
+import { stateExplosionLesson } from "./lessons/stateExplosion";
+import { ltlDoorLesson } from "./lessons/ltlDoor";
+import { exerciseModelLesson } from "./lessons/exerciseModel";
+import { exerciseCspLesson } from "./lessons/exerciseCsp";
 import { cspFdLesson } from "./lessons/cspFd";
 import { cspLawsLesson } from "./lessons/cspLaws";
 import { cspRulesLesson } from "./lessons/cspRules";
@@ -50,6 +58,8 @@ export const topic: Topic = {
     invariantLesson,
     deadlockLesson,
     livenessLesson,
+    stateExplosionLesson,
+    ltlDoorLesson,
     preconditionsLesson,
     smallScopeLesson,
     cspProcessLesson,
@@ -61,16 +71,22 @@ export const topic: Topic = {
     cspFdLesson,
     cspLawsLesson,
     cspRulesLesson,
+    cspDeterminismLesson,
     cspToCodeLesson,
     cspAbstractionLesson,
     cspAnonymityLesson,
     cspCancelLesson,
+    cspLazyLesson,
+    cspSharedLesson,
+    cspChannelPassingLesson,
     caseDesignLesson,
     caseVerifyLesson,
     caseImplementLesson,
     propertyTestLesson,
     traceToTestLesson,
     transitionCoverLesson,
+    exerciseModelLesson,
+    exerciseCspLesson,
   ],
   icons: TOPIC_ICONS,
 };

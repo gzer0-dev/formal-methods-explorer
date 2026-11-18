@@ -84,7 +84,16 @@ export interface Move {
   rule: string;
 }
 
+/** 組み込みの CHAOS(H): H のイベントをいつでも起こせるが、いつでも止まって全部を断ることもできる（Lazy 抽象化に使う）。 */
+const CHAOS = "__CHAOS";
+
+function chaos(events: string[]): Proc {
+  const self = ref(CHAOS, events.join("|"));
+  return int(STOP, ext(...events.map((ev) => pre(ev, self))));
+}
+
 function unfold(p: Extract<Proc, { k: "ref" }>, env: Env): Proc {
+  if (p.name === CHAOS) return chaos(String(p.args[0]).split("|"));
   const definition = env[p.name];
   if (!definition) throw new Error(`定義の無いプロセス: ${p.name}`);
   return (definition as (...args: (string | number)[]) => Proc)(...p.args);
@@ -587,4 +596,174 @@ export function completeTraces(root: Proc, env: Env): string[][] {
     return result;
   };
   return suffixes(root);
+}
+
+export interface Determinism {
+  isDeterministic: boolean;
+  /** 非決定的なら、そのトレースの後に「起こせるのに断ることもある」イベント、または発散。 */
+  witness:
+    | { trace: string[]; event: string; kind: "refusal" }
+    | { trace: string[]; kind: "divergence" }
+    | null;
+}
+
+/**
+ * 決定性（FDR の deterministic と同じ定義）: どのトレースの後でも、起こせるイベントを断ることがなく、発散もしない。
+ * 実装を「いまいうる状態の集まり」でたどり、集まりの中で起こせるイベントを、安定した別の状態が断れたら非決定的。
+ */
+export function determinism(root: Proc, env: Env): Determinism {
+  const cache = new Map<string, boolean>();
+  const start = tauClosure([root], env);
+  const seen = new Set<string>();
+  const queue: { states: Map<string, Proc>; trace: string[] }[] = [
+    { states: start, trace: [] },
+  ];
+  for (let head = 0; head < queue.length; head += 1) {
+    const { states, trace } = queue[head]!;
+    const key = [...states.keys()].sort().join("&");
+    if (seen.has(key)) continue;
+    seen.add(key);
+    for (const state of states.values()) {
+      if (canDiverge(state, env, cache))
+        return { isDeterministic: false, witness: { trace, kind: "divergence" } };
+    }
+    const possible = [
+      ...new Set([...states.values()].flatMap((state) => [...initials(state, env)])),
+    ].sort();
+    for (const event of possible) {
+      const refuses = [...states.values()].some(
+        (state) => isStable(state, env) && !initials(state, env).has(event),
+      );
+      if (refuses)
+        return { isDeterministic: false, witness: { trace, event, kind: "refusal" } };
+    }
+    for (const event of possible) {
+      if (event === TICK) continue;
+      queue.push({ states: afterEvent(states, event, env), trace: [...trace, event] });
+    }
+  }
+  return { isDeterministic: true, witness: null };
+}
+
+/**
+ * Lazy 抽象化: 隠すイベント H を、環境が勝手に起こしたり止めたりできるもの（CHAOS(H)）と同期させてから隠す。
+ * ただの隠蔽（Eager 抽象化）と違い、隠した動きが続いても「必ず続く」とはみなさない。安定失敗モデルで比べて使う。
+ */
+export function lazyAbstraction(p: Proc, hidden: string[]): Proc {
+  return hide(par(p, hidden, chaos(hidden)), hidden);
+}
+
+export interface Starvation {
+  /** 依頼してから、輪に入るまでの見えるイベント。 */
+  trace: string[];
+  /** 応答が来ないまま回り続ける輪の、見えるイベント。 */
+  cycle: string[];
+}
+
+/**
+ * 飢餓: request が起きてから response が起きるまでの間に、response を含まない輪で回り続けられるか。
+ * 全体の状態と「いま依頼が未応答か」の組をたどり、未応答の組だけでできた輪を探す。公平性は仮定しない。
+ */
+export function starvation(
+  root: Proc,
+  env: Env,
+  request: string,
+  response: string,
+): Starvation | null {
+  interface Node {
+    proc: Proc;
+    isWaiting: boolean;
+  }
+  const keyOf = (node: Node) => `${node.isWaiting ? 1 : 0}|${procKey(node.proc)}`;
+  const nodes = new Map<string, Node>();
+  const parent = new Map<string, { from: string; ev: string } | null>();
+  const edges = new Map<string, { to: string; ev: string }[]>();
+  const start: Node = { proc: root, isWaiting: false };
+  nodes.set(keyOf(start), start);
+  parent.set(keyOf(start), null);
+  const queue = [keyOf(start)];
+  for (let head = 0; head < queue.length; head += 1) {
+    const key = queue[head]!;
+    const node = nodes.get(key)!;
+    const out: { to: string; ev: string }[] = [];
+    for (const m of moves(node.proc, env)) {
+      const isWaiting =
+        m.ev === request ? true : m.ev === response ? false : node.isWaiting;
+      const next: Node = { proc: m.to, isWaiting };
+      const nextKey = keyOf(next);
+      out.push({ to: nextKey, ev: m.ev });
+      if (!nodes.has(nextKey)) {
+        nodes.set(nextKey, next);
+        parent.set(nextKey, { from: key, ev: m.ev });
+        queue.push(nextKey);
+      }
+    }
+    edges.set(key, out);
+  }
+  const visibleTrace = (key: string) => {
+    const reversed: string[] = [];
+    let cursor = parent.get(key);
+    while (cursor) {
+      if (cursor.ev !== TAU) reversed.push(cursor.ev);
+      cursor = parent.get(cursor.from);
+    }
+    return reversed.reverse();
+  };
+  // 未応答の状態だけをたどって輪を探す（response の辺は未応答から抜けるので、自然に輪に入らない）。
+  const done = new Set<string>();
+  for (const startKey of queue) {
+    if (!nodes.get(startKey)!.isWaiting || done.has(startKey)) continue;
+    const path: { key: string; ev: string }[] = [];
+    const onPath = new Map<string, number>();
+    const search = (key: string): Starvation | null => {
+      onPath.set(key, path.length);
+      for (const edge of edges.get(key) ?? []) {
+        if (!nodes.get(edge.to)!.isWaiting) continue;
+        const index = onPath.get(edge.to);
+        if (index !== undefined) {
+          const cycleEvents = [
+            ...path.slice(index).map((step) => step.ev),
+            edge.ev,
+          ].filter((ev) => ev !== TAU);
+          return { trace: visibleTrace(edge.to), cycle: cycleEvents };
+        }
+        if (done.has(edge.to)) continue;
+        path.push({ key, ev: edge.ev });
+        const found = search(edge.to);
+        if (found) return found;
+        path.pop();
+      }
+      onPath.delete(key);
+      done.add(key);
+      return null;
+    };
+    const found = search(startKey);
+    if (found) return found;
+  }
+  return null;
+}
+
+/**
+ * 見える振る舞いだけに正規化したときの状態数（FDR が仕様を比べる前に作る正規形の大きさ）。
+ * 見えるイベントの並びが同じなら1つに数えるので、隠した動きや内部の選び方の違いは消える。
+ */
+export function normalizedStateCount(root: Proc, env: Env): number {
+  const start = tauClosure([root], env);
+  const keyOf = (states: Map<string, Proc>) => [...states.keys()].sort().join("&");
+  const seen = new Set<string>([keyOf(start)]);
+  const queue = [start];
+  for (let head = 0; head < queue.length; head += 1) {
+    const states = queue[head]!;
+    const events = new Set(
+      [...states.values()].flatMap((state) => [...initials(state, env)]),
+    );
+    for (const event of events) {
+      const next = afterEvent(states, event, env);
+      const key = keyOf(next);
+      if (next.size === 0 || seen.has(key)) continue;
+      seen.add(key);
+      queue.push(next);
+    }
+  }
+  return seen.size;
 }

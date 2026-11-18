@@ -17,12 +17,16 @@ const probcli =
   process.env.PROBCLI ?? join(homedir(), ".local/share/prob/ProB/probcli");
 const javaBin = process.env.JAVA_HOME_BIN ?? "/opt/homebrew/opt/openjdk@21/bin";
 
-function runProb(args) {
-  const result = spawnSync(probcli, [...args, "Models.csp"], {
-    cwd: here,
-    encoding: "utf8",
-    env: { ...process.env, PATH: `${javaBin}:${process.env.PATH}` },
-  });
+function runProb(args, file = "Models.csp") {
+  const result = spawnSync(
+    probcli,
+    file === "Models.csp" ? [...args, file] : [file, ...args],
+    {
+      cwd: here,
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${javaBin}:${process.env.PATH}` },
+    },
+  );
   return { status: result.status, output: `${result.stdout}${result.stderr}` };
 }
 
@@ -311,6 +315,59 @@ const cases = [
     name: "発散する仕様の後は何でもあり",
     run: () => runProb(["-cspref", "DivergingSpec", "[FD=", "AnyImpl"]),
     expect: succeeded,
+  },
+  // 決定性（flaky なテストの原因）
+  {
+    name: "決定性: ロック無しのカウンタは非決定的（finish の後）",
+    run: () => runProb(["-cspdeterministic", "NaiveObserved", "F"]),
+    expect: failed,
+    contains: "go(finish",
+  },
+  {
+    name: "決定性: ロックありのカウンタは決定的",
+    run: () => runProb(["-cspdeterministic", "LockedObserved", "F"]),
+    expect: succeeded,
+  },
+  {
+    name: "決定性: 勝手に断るプリンタは非決定的",
+    run: () => runProb(["-cspdeterministic", "PrinterImpl", "F"]),
+    expect: failed,
+  },
+  {
+    name: "決定性: 仕様のプリンタは決定的",
+    run: () => runProb(["-cspdeterministic", "PrinterSpec", "F"]),
+    expect: succeeded,
+  },
+  // Lazy 抽象化
+  {
+    name: "Lazy 抽象化: 哲学者0は、ほかの人が止まると止まりうる（失敗詳細化で破れる）",
+    run: () => runProb(["-cspref", "FocusSpec", "[F=", "LazyFocusAsym"]),
+    expect: failed,
+  },
+  // 共用チャネルと飢餓（LTL は MAIN を決めた包みのファイルで調べる）
+  {
+    name: "飢餓: 好きな順の受け箱では、B が頼んでも応答が来ない実行がある",
+    run: () =>
+      runProb(["-ltlformula", "G([preq.CB] => F [presp.CB])"], "MainPoolAny.csp"),
+    expect: failed,
+  },
+  {
+    name: "飢餓: 先着順の受け箱では、B は必ず応答をもらえる",
+    run: () =>
+      runProb(["-ltlformula", "G([preq.CB] => F [presp.CB])"], "MainPoolFifo.csp"),
+    expect: succeeded,
+  },
+  // チャネル渡し
+  {
+    name: "チャネル渡し: 空きを覚える振り分け役は同じセッションを2人に渡さない",
+    run: () => runProb(["-cspref", "Exclusive", "[T=", "SessionViewOk"]),
+    expect: succeeded,
+  },
+  {
+    name: "チャネル渡し: 空きを覚えない振り分け役は [assign.A.s1, assign.B.s1] で破れる",
+    run: () => runProb(["-cspref", "Exclusive", "[T=", "SessionViewBug"]),
+    expect: failed,
+    trace: ["assign.CA.s1", "assign.CB.s1"],
   },
 ];
 

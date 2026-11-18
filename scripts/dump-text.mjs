@@ -4,31 +4,11 @@
 //
 //   npm run dump:text
 
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
-import { pathToFileURL } from "node:url";
+import { mkdirSync, writeFileSync } from "node:fs";
 
-import { build } from "esbuild";
+import { loadTopic } from "./loadTopic.mjs";
 
 const OUT_FILE = "docs/lesson-text.txt";
-const BUNDLE_DIR = resolve("node_modules/.cache/dump-text");
-
-async function loadTopic() {
-  mkdirSync(BUNDLE_DIR, { recursive: true });
-  const bundlePath = join(BUNDLE_DIR, `topic-${Date.now()}.mjs`);
-  await build({
-    entryPoints: ["src/topic/index.ts"],
-    bundle: true,
-    format: "esm",
-    outfile: bundlePath,
-    logLevel: "error",
-  });
-  try {
-    return (await import(pathToFileURL(bundlePath).href)).topic;
-  } finally {
-    rmSync(bundlePath, { force: true });
-  }
-}
 
 /** 題材の文言を、読む順に並べた行の配列にする。 */
 export function topicLines(topic) {

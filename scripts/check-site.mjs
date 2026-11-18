@@ -6,6 +6,8 @@
 //   3. robots.txt と sitemap.xml が公開 URL を指している
 //   4. index.html が読み込むローカルのファイル（script・stylesheet・icon）の実体がある
 //   5. 公開 URL が見本のまま（example.com）になっていない … 警告のみ。公開前に直す
+//   6. #app に静的なレッスンの本文が書き込まれている（検索エンジン・SNS のプレビュー向け。0 件なら落とす）
+//   7. og:image があれば、公開 URL の下を指し、dist にその画像の実体がある
 //
 // 「在るか」ではなく「中身が合っているか」を見る。4 は見た件数を出力し、0 件なら落とす
 // （対象が 0 件のまま合格を出し続ける検査にしないため）。
@@ -37,6 +39,18 @@ export function localRefs(html) {
 export function metaContent(html, attribute, name) {
   const pattern = new RegExp(`<meta ${attribute}="${name}" content="([^"]*)"`);
   return html.match(pattern)?.[1] ?? null;
+}
+
+/** prerender.mjs が #app に書き込んだ静的なレッスンの数。 */
+export function staticLessonCount(html) {
+  return (html.match(/<section class="static-lesson"/g) ?? []).length;
+}
+
+/** og:image の dist の中のファイル名。meta が無ければ null、公開 URL の外を指していれば undefined。 */
+export function ogImageFile(html, siteUrl) {
+  const url = metaContent(html, "property", "og:image");
+  if (url === null) return null;
+  return url.startsWith(siteUrl) ? url.slice(siteUrl.length) : undefined;
 }
 
 function unescapeHtml(text) {
@@ -91,8 +105,18 @@ function main() {
     if (!existsSync(join(DIST, ref))) problems.push(`読み込み先の実体が無い: ${ref}`);
   }
 
+  const lessonCount = staticLessonCount(html);
+  if (lessonCount === 0)
+    problems.push("#app に静的なレッスンの本文が無い（prerender が走っていない）");
+  const ogImage = ogImageFile(html, site.url);
+  if (ogImage === undefined) problems.push("og:image が公開 URL の外を指している");
+  else if (ogImage !== null && !existsSync(join(DIST, ogImage))) {
+    problems.push(`og:image の実体が無い: ${ogImage}`);
+  }
+
   console.log(
-    `site check: 読み込み先 ${refs.length} 件の実体と、メタ情報 4 項目を見た`,
+    `site check: 読み込み先 ${refs.length} 件の実体と、メタ情報 4 項目と、静的な本文 ${lessonCount} レッスン` +
+      `${ogImage ? "と og:image" : ""}を見た`,
   );
   if (site.url.includes("example.com")) {
     console.warn(

@@ -147,3 +147,31 @@ channel tt, xx
 ChaosLoop = tt -> ChaosLoop
 DivergingSpec = ChaosLoop \ {tt}
 AnyImpl = xx -> STOP
+
+-- ---- 決定性・Lazy 抽象化・共用チャネル（src/topic/cspMore.ts と同じ） ----
+FocusHiddenSet(asym) = diff({| pick, put |}, {pick.0.0, put.0.0})
+LazyFocusAsym = (Dining(3, 1) [| FocusHiddenSet(1) |] CHAOS(FocusHiddenSet(1))) \ FocusHiddenSet(1)
+
+datatype Customer = CA | CB
+channel preq, take, presp : Customer
+PClient(w) = preq.w -> presp.w -> PClient(w)
+AnyBox(s) = ([] w : diff({CA, CB}, s) @ preq.w -> AnyBox(union(s, {w})))
+            [] ([] w : s @ take.w -> AnyBox(diff(s, {w})))
+FifoBox(q) = ([] w : diff({CA, CB}, set(q)) @ preq.w -> FifoBox(q ^ <w>))
+             [] (length(q) > 0 & take.head(q) -> FifoBox(tail(q)))
+PServer = [] w : {CA, CB} @ take.w -> presp.w -> PServer
+PoolAny = (PClient(CA) ||| PClient(CB)) [| {| preq, presp |} |] (AnyBox({}) [| {| take |} |] PServer)
+PoolFifo = (PClient(CA) ||| PClient(CB)) [| {| preq, presp |} |] (FifoBox(<>) [| {| take |} |] PServer)
+
+-- ---- チャネル渡し: セッションのチャネル（s1・s2）を客に渡す（src/topic/cspSession.ts と同じ） ----
+datatype Session = s1 | s2
+channel assign, release, talk : {CA, CB}.Session
+SClient(cl) = [] s : Session @ assign.cl.s -> talk.cl.s -> release.cl.s -> SClient(cl)
+Balancer(free) = ([] cl : {CA, CB} @ [] s : free @ assign.cl.s -> Balancer(diff(free, {s})))
+                 [] ([] cl : {CA, CB} @ [] s : diff(Session, free) @ release.cl.s -> Balancer(union(free, {s})))
+ForgetfulBalancer = [] cl : {CA, CB} @ [] s : Session @ (assign.cl.s -> ForgetfulBalancer [] release.cl.s -> ForgetfulBalancer)
+SessionSystem = (SClient(CA) ||| SClient(CB)) [| {| assign, release |} |] Balancer(Session)
+SessionForgetful = (SClient(CA) ||| SClient(CB)) [| {| assign, release |} |] ForgetfulBalancer
+Exclusive = [] cl : {CA, CB} @ assign.cl.s1 -> release.cl.s1 -> Exclusive
+SessionViewOk = SessionSystem \ diff(Events, {assign.CA.s1, assign.CB.s1, release.CA.s1, release.CB.s1})
+SessionViewBug = SessionForgetful \ diff(Events, {assign.CA.s1, assign.CB.s1, release.CA.s1, release.CB.s1})

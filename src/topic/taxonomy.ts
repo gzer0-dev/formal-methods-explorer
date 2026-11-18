@@ -19,4 +19,5 @@ export const CATEGORIES: Category[] = [
   { id: "apply", label: "CSP の応用" },
   { id: "case", label: "事例: 設計から実装まで" },
   { id: "testing", label: "テストへつなぐ" },
+  { id: "exercise", label: "演習" },
 ];

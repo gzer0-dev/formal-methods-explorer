@@ -6,7 +6,7 @@
   "description": "形式手法（モデル検査・仕様・性質ベーステスト）を1ステップずつ図で学ぶサイト",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",

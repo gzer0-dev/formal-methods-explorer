@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   acceptsTrace,
+  determinism,
+  lazyAbstraction,
   checkLaw,
   failuresDivergencesRefines,
   moves,
@@ -244,5 +246,45 @@ describe("代数法則を検査器で確かめる", () => {
       failures: false,
       failuresDivergences: false,
     });
+  });
+});
+
+describe("決定性（同じトレースの後に、起こせるイベントを断ることがないか）", () => {
+  it("外部選択だけのプロセスは決定的", () => {
+    expect(determinism(ext(pre("a", STOP), pre("b", STOP)), {})).toEqual({
+      isDeterministic: true,
+      witness: null,
+    });
+  });
+
+  it("内部選択で片方を断れるプロセスは非決定的で、そのトレースとイベントを返す", () => {
+    expect(determinism(int(pre("a", STOP), pre("b", STOP)), {})).toEqual({
+      isDeterministic: false,
+      witness: { trace: [], event: "a", kind: "refusal" },
+    });
+  });
+
+  it("同じイベントの外部選択でも、その後が違えば非決定的", () => {
+    const result = determinism(
+      ext(pre("a", pre("b", STOP)), pre("a", pre("c", STOP))),
+      {},
+    );
+    expect(result.isDeterministic).toBe(false);
+    expect(result.witness?.trace).toEqual(["a"]);
+  });
+
+  it("発散するプロセスは非決定的", () => {
+    const env: Env = { Loop: () => pre("t", ref("Loop")) };
+    expect(determinism(hide(ref("Loop"), ["t"]), env).witness?.kind).toBe("divergence");
+  });
+});
+
+describe("Lazy 抽象化（隠すイベントを、環境が勝手に止められるものとして扱う）", () => {
+  it("隠すイベントが続くと、Eager（ただの隠蔽）は発散するが、Lazy は発散せず「止まりうる」になる", () => {
+    const env: Env = { P: () => ext(pre("h", ref("P")), pre("a", STOP)) };
+    const eager = hide(ref("P"), ["h"]);
+    const lazy = lazyAbstraction(ref("P"), ["h"]);
+    expect(divergence(eager, env)).not.toBeNull();
+    expect(failuresRefines(pre("a", STOP), lazy, env).holds).toBe(true);
   });
 });

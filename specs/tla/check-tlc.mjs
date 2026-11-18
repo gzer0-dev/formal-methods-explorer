@@ -177,6 +177,35 @@ const cases = [
     run: () => runTlc("Job", job(true, "SpecSFSucceed")),
     expect: NO_ERROR,
   },
+  // 扉の時相論理（利用者の動きは公平性なし、扉の動きは弱い公平性）
+  ...[false, true].flatMap((bug) =>
+    [
+      ["LeadsToOpen", bug ? TEMPORAL_BROKEN : NO_ERROR, "呼べばいつか開く"],
+      ["InfinitelyOftenClosed", NO_ERROR, "何度でも閉じる"],
+      ["EventuallyAlwaysOpen", TEMPORAL_BROKEN, "ずっと開いたまま"],
+      ["Safe", NO_ERROR, "開いている間は呼び出しが残らない"],
+    ].map(([property, expect, label]) => ({
+      name: `扉（${bug ? "取りこぼしあり" : "正しい"}）: ${label}`,
+      run: () =>
+        runTlc(
+          "Door",
+          `CONSTANT HasBug = ${tla(bug)}\nSPECIFICATION Spec\nPROPERTY ${property}\n`,
+        ),
+      expect,
+    })),
+  ),
+  // 状態爆発: 素朴に書いた哲学者の状態数（サイトの CSP のモデルとも一致）
+  ...[
+    [2, 10],
+    [3, 35],
+    [4, 118],
+    [5, 392],
+  ].map(([n, distinct]) => ({
+    name: `哲学者 ${n}人: ${distinct}状態`,
+    run: () =>
+      runTlc("Philosophers", `CONSTANT N = ${n}\nSPECIFICATION Spec\n`, ["-deadlock"]),
+    distinct,
+  })),
 ];
 
 let failures = 0;
