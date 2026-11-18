@@ -1,6 +1,6 @@
 # レッスンを書く担当への共通の指示
 
-対象: /Users/gzer0/Projects/formal-methods-explorer（形式手法を1ステップずつ図で学ぶサイト。TypeScript + Vite）
+対象: このリポジトリ formal-methods-explorer（形式手法を1ステップずつ図で学ぶサイト。TypeScript + Vite）
 
 ## 必ず読むもの
 

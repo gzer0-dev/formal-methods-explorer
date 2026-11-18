@@ -30,6 +30,12 @@
 - 上司の関係: 64 通り中 48、27 通り中 11、16 通り中 0 が反例。
 - 性質ベーステスト: 誤った実装は反例が見つかり、縮めた反例はそれ以上縮まらない。同じシードなら同じ結果。
 
+## 公開
+
+- 公開先: https://gzer0-dev.github.io/formal-methods-explorer/ （GitHub Pages、リポジトリは公開）。
+- main に push すると `.github/workflows/pages.yml` が `npm run verify` を通してから出す。verify が落ちると公開されない。
+- URL を変えるときは `topic.config.json` の url を直す（canonical・robots.txt・sitemap.xml がそこから作られ、check:site が突き合わせる）。
+
 ## 文言と操作名の書式（2026-11-18 に踏んだ）
 
 - 名前と助詞、数字のまわりに半角空白を入れない（「Aが読む」「6通り」）。英単語（TLA+・count など）の前後は空白を入れてよい。

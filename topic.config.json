@@ -1,7 +1,7 @@
 {
   "title": "形式手法のしくみ",
   "description": "テストが見逃す並行処理のバグを、モデル検査・事前条件・性質ベーステストで見つけるまでを、1ステップずつ図で追える学習サイト。",
-  "url": "https://example.com/formal-methods/",
+  "url": "https://gzer0-dev.github.io/formal-methods-explorer/",
   "lang": "ja",
   "themeColor": "#123a63"
 }
