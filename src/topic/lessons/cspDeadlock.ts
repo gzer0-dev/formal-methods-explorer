@@ -267,7 +267,7 @@ export const cspDeadlockLesson: Lesson = {
         },
       },
       simplified:
-        "実物の FDR は deadlock free の表明でデッドロックを調べる。ここではこのサイトの小さな実装（csp.ts）でたどっており、FDR の結果との照合はまだしていない。",
+        "実物の FDR は deadlock free の表明でデッドロックを調べる。同じモデルを CSPM で書いて ProB にかけると、2人では2手、3人では pick.0.0 → pick.1.1 → pick.2.2 の3手でデッドロックし、1人だけ逆順にすると無くなることが、このサイトの結果と一致した（リポジトリの specs/csp）。",
     },
     ...pickSteps,
     {

@@ -44,6 +44,13 @@ jobs:
           curl -sSL -o "$RUNNER_TEMP/alloy/alloy.jar" https://github.com/AlloyTools/org.alloytools.alloy/releases/download/v6.2.0/org.alloytools.alloy.dist.jar
           echo "6b8c1cb5bc93bedfc7c61435c4e1ab6e688a242dc702a394628d9a9801edb78d  $RUNNER_TEMP/alloy/alloy.jar" | sha256sum -c -
           JAVA=java ALLOY_JAR="$RUNNER_TEMP/alloy/alloy.jar" npm run check:alloy
+      - name: ProB（1.16.1）を取得して CSP を照合
+        run: |
+          mkdir -p "$RUNNER_TEMP/prob"
+          curl -sSL -o "$RUNNER_TEMP/prob/ProB.tar.gz" https://stups.hhu-hosting.de/downloads/prob/tcltk/releases/1.16.1/ProB.linux64.tar.gz
+          echo "e9f0c74a6bbf177c9146d01869afa1c4276f5fc8d3b670f31b0230f035753bef  $RUNNER_TEMP/prob/ProB.tar.gz" | sha256sum -c -
+          tar xzf "$RUNNER_TEMP/prob/ProB.tar.gz" -C "$RUNNER_TEMP/prob"
+          PROBCLI="$RUNNER_TEMP/prob/ProB/probcli" JAVA_HOME_BIN="$JAVA_HOME/bin" npm run check:csp
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

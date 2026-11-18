@@ -1,0 +1,60 @@
+-- サイトの CSP のレッスン（src/topic/cspModels.ts）と同じモデルを CSPM で書いたもの。
+-- ProB（probcli）で詳細化・デッドロック・発散を調べ、サイトの自作の検査器の結果と照合する（check-prob.mjs）。
+
+-- ---- カウンタ: 共有変数をプロセスで書く ----
+datatype Who = A | B
+Vals = {0..2}
+inc(x) = if x < 2 then x + 1 else 2
+
+channel read, write : Who.Vals
+channel finish
+channel result : Vals
+channel lock, unlock : Who
+
+Var(x) = ([] w : Who @ read.w.x -> Var(x))
+         [] ([] w : Who @ [] y : Vals @ write.w.y -> Var(y))
+         [] finish -> result.x -> SKIP
+
+Adder(w) = [] x : Vals @ read.w.x -> write.w.inc(x) -> SKIP
+LockedAdder(w) = lock.w -> ([] x : Vals @ read.w.x -> write.w.inc(x) -> unlock.w -> SKIP)
+Lock = ([] w : Who @ lock.w -> unlock.w -> Lock) [] finish -> SKIP
+
+Naive = Var(0) [| {| read, write, finish |} |] ((Adder(A) ||| Adder(B)) ; finish -> SKIP)
+Locked = (Var(0) [| {| read, write, finish |} |] ((LockedAdder(A) ||| LockedAdder(B)) ; finish -> SKIP))
+         [| {| lock, unlock, finish |} |] Lock
+
+NaiveObserved = Naive \ {| read, write |}
+LockedObserved = Locked \ {| read, write, lock, unlock |}
+ResultSpec = finish -> result.2 -> SKIP
+
+-- ---- プリンタ: 外部選択と内部選択 ----
+-- サイトの print は CSPM の予約語なので、ここでは output と書く。
+channel mono, color, output
+
+PrinterSpec = mono -> output -> PrinterSpec [] color -> output -> PrinterSpec
+PrinterImpl = (mono -> output -> PrinterImpl [] color -> output -> PrinterImpl)
+              |~| (mono -> output -> PrinterImpl)
+
+-- ---- 食事する哲学者（n 人、asym = 1 なら最後の1人だけ右から取る） ----
+channel pick, put : {0..2}.{0..2}
+
+First(i, n, asym) = if asym == 1 and i == n - 1 then (i + 1) % n else i
+Second(i, n, asym) = if asym == 1 and i == n - 1 then i else (i + 1) % n
+Phil(i, n, asym) = pick.i.First(i, n, asym) -> pick.i.Second(i, n, asym)
+                   -> put.i.Second(i, n, asym) -> put.i.First(i, n, asym) -> Phil(i, n, asym)
+Fork(j, n) = [] i : {j, (j - 1 + n) % n} @ pick.i.j -> put.i.j -> Fork(j, n)
+Dining(n, asym) = (||| i : {0..n-1} @ Phil(i, n, asym)) [| {| pick, put |} |] (||| j : {0..n-1} @ Fork(j, n))
+
+Dining2 = Dining(2, 0)
+Dining2Fixed = Dining(2, 1)
+Dining3 = Dining(3, 0)
+Dining3Fixed = Dining(3, 1)
+
+-- ---- リトライするジョブ（retries = -1 なら無制限） ----
+channel start, succeed, fail, giveup
+
+Job(k) = start -> (succeed -> SKIP
+                   [] (if k == 0 then giveup -> SKIP else fail -> Job(if k < 0 then -1 else k - 1)))
+JobUnlimited = Job(-1)
+JobUnlimitedHidden = Job(-1) \ {start, fail}
+JobLimitedHidden = Job(2) \ {start, fail}

@@ -44,7 +44,12 @@
 - 不変条件（`src/topic/csp.test.ts`・`cspModels.test.ts`）: カウンタはロック無しで result.1 に6手で着き、ロックありは着かない／
   仕様「finish の後は result.2」はロック無しで [finish, result.1] で破れる／プリンタは ⊑T で成り立ち ⊑F で [] と {color} で破れる／
   哲学者は同じ向きだと n 手でデッドロック、1人逆順で無し／リトライ無制限を隠すと発散、上限付きは発散しない。
-- 実物の CSP の検査器（FDR・ProB）との照合はまだしていない。
+- **ProB との照合（specs/csp）**: `Models.csp` に同じモデルを CSPM で書き、`npm run check:csp` が ProB 1.16.1 の probcli で
+  詳細化（[T= / [F=）・デッドロック・発散を照合する（13件、CI でも公開前に走る）。手元の probcli は `~/.local/share/prob/ProB/probcli`。
+  CSPM では print が予約語なので、プリンタの print は output と書いている。
+  **ProB は SKIP で正しく終わった状態もデッドロックと報告する**（a → SKIP でも tick の後に DEADLOCKS）。サイトは ✓ で終わった状態を数えないので、
+  この差をレッスンの簡略化に書き、照合でも固定している。FDR の扱いは未確認（マニュアルの定義から読み取れなかった）。
+  ProB の失敗詳細化の反例は、サイトの最短の反例（最初の時点）と違う時点（1回刷った後）を返すことがある。どちらも同じ拒否（color）。
 
 ## TLA+ との照合（specs/tla）
 

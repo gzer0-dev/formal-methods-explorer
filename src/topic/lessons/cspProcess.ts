@@ -247,7 +247,7 @@ export const cspProcessLesson: Lesson = {
       title: "SKIP は正しく終わる",
       actor: "skip",
       summary: `SKIP は ${SKIP_MOVES.map((m) => m.ev).join("・")}（正しく終わった合図）だけを起こす。print → SKIP はデッドロックが${PRINT_THEN_SKIP.length}件`,
-      explain: `SKIP は、${TICK}（チェック記号。正しく終わった合図）を起こして終わるプロセス。同じ「print の後に何もしない」でも、SKIP なら意図した終わり方なので、デッドロックは${PRINT_THEN_SKIP.length}件になる。止まったのか終わったのかを、STOP と SKIP で書き分ける。`,
+      explain: `SKIP は、${TICK}（チェック記号。正しく終わった合図）を起こして終わるプロセス。同じ「print の後に何もしない」でも、SKIP なら意図した終わり方なので、このサイトの検査器ではデッドロックは${PRINT_THEN_SKIP.length}件になる。止まったのか終わったのかを、STOP と SKIP で書き分ける。`,
       set: {
         skip: {
           isHidden: false,
@@ -258,7 +258,7 @@ export const cspProcessLesson: Lesson = {
           },
         },
       },
-      simplified: `${TICK} は見える出来事の1つとして扱っている。外から見えない動きは ${TAU}（タウ）で、このレッスンの仕様には出てこない。CSP の理論では STOP（止まる）と SKIP（正しく終わる）は別のプロセス。ただし、FDR の deadlock free の表明が SKIP で終わった状態をどう扱うかは、マニュアルの定義からは読み取れなかったので確かめていない（TLA+ の TLC は、正しく終わった状態も止まったと報告する）。`,
+      simplified: `${TICK} は見える出来事の1つとして扱っている。外から見えない動きは ${TAU}（タウ）で、このレッスンの仕様には出てこない。CSP の理論では STOP（止まる）と SKIP（正しく終わる）は別のプロセスで、このサイトの検査器は ✓ で終わった状態をデッドロックに数えない。ただし、実物の検査器 ProB で同じモデルを確かめると、a → SKIP のように正しく終わった状態もデッドロックとして報告された（TLA+ の TLC と同じ）。FDR の扱いはマニュアルの定義からは読み取れず、確かめていない。`,
     },
   ],
   lab: {
