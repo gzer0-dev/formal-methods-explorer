@@ -1,4 +1,5 @@
 import type { Field, Lesson } from "../../core/types";
+import { CSP_BOOK } from "../references";
 import { check, countExecutions } from "../modelCheck";
 import { counterModel, isCounterCorrect, runSchedule } from "../models";
 
@@ -32,6 +33,7 @@ export const lostUpdateLesson: Lesson = {
     { label: "更新が消える並び", value: `${NAIVE_RUNS.bad}通り`, tone: "bad" },
     { label: "たどった状態", value: `${NAIVE_CHECK.stateCount}個` },
     { label: "実物の道具", value: "TLA+ と TLC" },
+    { label: "参考文献", value: `${CSP_BOOK} 2.4.2節（共有変数とロック）` },
   ],
   actors: [
     {

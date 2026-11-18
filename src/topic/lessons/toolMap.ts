@@ -1,4 +1,5 @@
 import type { Lesson } from "../../core/types";
+import { CSP_BOOK } from "../references";
 import { bfsLesson } from "./bfs";
 import { counterexampleLesson } from "./counterexample";
 import { invariantLesson } from "./invariant";
@@ -157,6 +158,22 @@ export const toolMapLesson: Lesson = {
             { label: stateMachineLesson.title, value: "注文を状態と操作で書く" },
             { label: invariantLesson.title, value: "いつでも成り立つべき性質" },
             { label: livenessLesson.title, value: "活性（いつか良いことが起きる）" },
+          ],
+        },
+        {
+          title: "もう1つの道具: CSP と FDR",
+          fields: [
+            {
+              label: "考え方",
+              value:
+                "仕様も実装のモデルも同じ記法のプロセスで書き、実装の振る舞いが仕様で許した範囲に収まるか（詳細化）を調べる",
+            },
+            {
+              label: "調べられること",
+              value:
+                "詳細化のほか、デッドロックが無いこと、ライブロック（外から見えない動きの無限ループ）が無いこと、決定的に動くこと",
+            },
+            { label: "参考文献", value: `${CSP_BOOK} 第3章・第6章・第7章` },
           ],
         },
       ],

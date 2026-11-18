@@ -1,4 +1,5 @@
 import type { Field, Lesson } from "../../core/types";
+import { CSP_BOOK } from "../references";
 import { check, type Model } from "../modelCheck";
 import { lockModel, type LockName, type LockState } from "../models";
 
@@ -80,6 +81,10 @@ export const deadlockLesson: Lesson = {
       tone: "ok",
     },
     { label: "実物の道具", value: "TLC のデッドロック検査" },
+    {
+      label: "参考文献",
+      value: `${CSP_BOOK} 3.2.4〜3.2.5節（FDR の表明と食事する哲学者）`,
+    },
   ],
   actors: [
     {
@@ -170,7 +175,7 @@ export const deadlockLesson: Lesson = {
         },
       },
       simplified:
-        "TLC はデッドロックの検査が既定で有効で、正しく終わった状態も「動けない」と報告する。そのため実務では終わりの状態に足踏み（何も変えない遷移）を足すか、検査を切る。ここでは isFinal で終わりの状態を分けている。",
+        "TLC はデッドロックの検査が既定で有効で、正しく終わった状態も「動けない」と報告する。そのため実務では終わりの状態に足踏み（何も変えない遷移）を足すか、検査を切る。ここでは isFinal で終わりの状態を分けている。CSP の検査器 FDR にも、想定していない所で止まらないこと（デッドロックフリー性）を調べる deadlock free の表明がある。",
     },
     {
       id: "t1-takes",

@@ -1,4 +1,5 @@
 import type { Field, Lesson, Step } from "../../core/types";
+import { CSP_BOOK } from "../references";
 import { check, countExecutions } from "../modelCheck";
 import {
   counterModel,
@@ -121,6 +122,7 @@ export const bfsLesson: Lesson = {
     { label: "遷移", value: `${RESULT.transitionCount}本` },
     { label: "深さごとの数", value: RESULT.levels.join(" → ") },
     { label: "実物の道具", value: "TLC（TLA+ の検査器）" },
+    { label: "参考文献", value: `${CSP_BOOK} 3.1節（モデル検査）` },
   ],
   actors: [
     {

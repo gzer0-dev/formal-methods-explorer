@@ -1,4 +1,5 @@
 import type { Field, Lesson } from "../../core/types";
+import { CSP_BOOK } from "../references";
 import { check, checkEventually } from "../modelCheck";
 import type { TraceStep } from "../modelCheck";
 import { isJobFinished, jobModel } from "../models";
@@ -48,6 +49,7 @@ export const livenessLesson: Lesson = {
     },
     { label: "反例の形", value: `${CYCLE.length - 1}手で一周する輪` },
     { label: "実物の道具", value: "TLA+ と TLC（時相論理）" },
+    { label: "参考文献", value: `${CSP_BOOK} 7.1.2節（ライブロックフリー性）` },
   ],
   actors: [
     {
@@ -205,7 +207,7 @@ export const livenessLesson: Lesson = {
         },
       },
       simplified:
-        "TLA+ では「いつか必ず」を時相論理の <>（eventually）で書き、TLC が輪を探す。ここでは自作の検査器が深さ優先で輪と行き止まりを探している。",
+        "TLA+ では「いつか必ず」を時相論理の <>（eventually）で書き、TLC が輪を探す。ここでは自作の検査器が深さ優先で輪と行き止まりを探している。CSP の検査器 FDR では、外から見えない内部の動きだけを限りなく繰り返す状態をライブロックと呼び、livelock free の表明で調べる。このジョブも、「実行する」「失敗する」を外から見えない動きとして扱えば、この輪がライブロックに当たる。",
     },
   ],
   lab: {
