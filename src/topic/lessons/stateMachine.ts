@@ -137,7 +137,7 @@ export const stateMachineLesson: Lesson = {
         },
       ],
       simplified:
-        'TLA+ では、たとえば Pay == status = "未払い" /\\ status\' = "支払済み" のように、いまの値と次の値（\' 付き）の関係を論理式で書く。ここでは同じ中身を表で書き、TypeScript の関数にしている。',
+        'TLA+ では、たとえば Pay == status = "unpaid" /\\ status\' = "paid" のように、いまの値と次の値（\' 付き）の関係を論理式で書く。TLA+ の文字列には日本語を書けないので、状態の名前は英字にする。ここでは同じ中身を表で書き、TypeScript の関数にしている。TLA+ で書いた同じ仕様はリポジトリの specs/tla/Order.tla にある。',
     },
     {
       id: "pay",

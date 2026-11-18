@@ -161,7 +161,7 @@ export const toolMapLesson: Lesson = {
         },
       ],
       simplified:
-        "このサイトの検査器は TypeScript で作った小さなもので、TLA+ の記法や TLC の設定は扱っていない。書き方は TLA+ の公式の資料で確かめてほしい。",
+        "このサイトの検査器は TypeScript で作った小さなもの。同じモデルを TLA+ で書いた仕様をリポジトリの specs/tla に置き、TLC にかけて状態の数と反例がこのサイトと一致することを確かめてある。",
     },
     {
       id: "alloy",

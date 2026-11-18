@@ -27,6 +27,17 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run verify
+      # サイトの数字が TLA+ の TLC と一致するかを照合する（specs/tla）。食い違ったら公開しない。
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: TLA+ の道具（tla2tools.jar v1.7.4）を取得して照合
+        run: |
+          mkdir -p "$RUNNER_TEMP/tla"
+          curl -sSL -o "$RUNNER_TEMP/tla/tla2tools.jar" https://github.com/tlaplus/tlaplus/releases/download/v1.7.4/tla2tools.jar
+          echo "936a262061c914694dfd669a543be24573c45d5aa0ff20a8b96b23d01e050e88  $RUNNER_TEMP/tla/tla2tools.jar" | sha256sum -c -
+          JAVA=java TLA2TOOLS="$RUNNER_TEMP/tla/tla2tools.jar" npm run check:tla
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

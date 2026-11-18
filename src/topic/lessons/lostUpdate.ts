@@ -201,7 +201,7 @@ export const lostUpdateLesson: Lesson = {
         b: { tone: "ok" },
       },
       simplified:
-        "実物の TLA+ では、プロセスの手順を PlusCal などで書き、TLC が同じように全部の状態をたどる。ここでは検査器を TypeScript で小さく作り、このページの中で実際に動かしている。",
+        "実物の TLA+ では、プロセスの手順を PlusCal などで書き、TLC が同じように全部の状態をたどる。ここでは検査器を TypeScript で小さく作り、このページの中で実際に動かしている。同じモデルを TLA+ で書いて TLC にかけると、同じ12状態と同じ4手の反例が出る（リポジトリの specs/tla/Counter.tla）。",
     },
   ],
   lab: {
