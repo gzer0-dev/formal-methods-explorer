@@ -38,10 +38,10 @@ export const propertyTestLesson: Lesson = {
   category: "testing",
   title: "性質ベーステスト",
   subtitle: "入力を作らせて、成り立つべき性質を確かめる",
-  summary: `「重複を取り除く」関数を、例ではなく性質で試す。隣どうしだけ見る誤った実装は ${BUGGY.runs} 回目で反例が見つかり、${formatArray(SHRUNK)} まで縮められる。`,
+  summary: `「重複を取り除く」関数を、例ではなく性質で試す。隣どうしだけ見る誤った実装は${BUGGY.runs}回目で反例が見つかり、${formatArray(SHRUNK)}まで縮められる。`,
   facts: [
-    { label: "試す回数", value: `最大 ${RUNS} 回` },
-    { label: "反例が出た回", value: `${BUGGY.runs} 回目`, tone: "bad" },
+    { label: "試す回数", value: `最大${RUNS}回` },
+    { label: "反例が出た回", value: `${BUGGY.runs}回目`, tone: "bad" },
     { label: "縮めた反例", value: formatArray(SHRUNK), tone: "bad" },
     { label: "実物の道具", value: "fast-check・Hypothesis" },
   ],
@@ -120,10 +120,10 @@ export const propertyTestLesson: Lesson = {
       title: "入力を作って流す",
       actor: "generator",
       to: ["subject"],
-      summary: `シード ${SEED} で配列を作り、1回ずつ関数に通す`,
-      explain: `生成器が長さ 0〜${MAX_LENGTH}、値 0〜${MAX_VALUE} の配列を作り、対象の関数に渡す。シード（乱数の種）を決めておくと、同じ入力の並びを何度でも作り直せる。`,
+      summary: `シード${SEED}で配列を作り、1回ずつ関数に通す`,
+      explain: `生成器が長さ0〜${MAX_LENGTH}、値0〜${MAX_VALUE}の配列を作り、対象の関数に渡す。シード（乱数の種）を決めておくと、同じ入力の並びを何度でも作り直せる。`,
       set: {
-        generator: { tone: "wait", rows: { 試した回数: `${BUGGY.runs - 1} 回` } },
+        generator: { tone: "wait", rows: { 試した回数: `${BUGGY.runs - 1}回` } },
         property: { tone: "ok", rows: { 結果: "ここまで成り立つ" } },
       },
       simplified:
@@ -135,10 +135,10 @@ export const propertyTestLesson: Lesson = {
       title: "反例が見つかる",
       actor: "property",
       to: ["subject"],
-      summary: `${BUGGY.runs} 回目の入力 ${formatArray(FAILING)} で性質が破れる`,
-      explain: `${BUGGY.runs} 回目に作った ${formatArray(FAILING)} を通すと、出力は ${formatArray(FAILING_OUTPUT)} で重複が残る。隣どうしだけを比べているので、離れた場所にある同じ値を取り除けない。`,
+      summary: `${BUGGY.runs}回目の入力${formatArray(FAILING)}で性質が破れる`,
+      explain: `${BUGGY.runs}回目に作った${formatArray(FAILING)}を通すと、出力は${formatArray(FAILING_OUTPUT)}で重複が残る。隣どうしだけを比べているので、離れた場所にある同じ値を取り除けない。`,
       set: {
-        generator: { tone: "idle", rows: { 試した回数: `${BUGGY.runs} 回` } },
+        generator: { tone: "idle", rows: { 試した回数: `${BUGGY.runs}回` } },
         subject: {
           tone: "bad",
           rows: { 入力: formatArray(FAILING), 出力: formatArray(FAILING_OUTPUT) },
@@ -152,9 +152,9 @@ export const propertyTestLesson: Lesson = {
       title: "反例を縮める",
       actor: "shrinker",
       to: ["subject"],
-      summary: `要素を消したり値を小さくしたりして ${BUGGY.shrinkSteps.length - 1} 回縮める`,
+      summary: `要素を消したり値を小さくしたりして${BUGGY.shrinkSteps.length - 1}回縮める`,
       explain:
-        "縮小器（shrink）は、反例から要素を1つ消した配列や、値を 0 や1つ小さい値に変えた配列を試す。まだ性質が破れる候補があればそれに乗り換え、もう縮まらなくなるまで続ける。",
+        "縮小器（shrink）は、反例から要素を1つ消した配列や、値を0や1つ小さい値に変えた配列を試す。まだ性質が破れる候補があればそれに乗り換え、もう縮まらなくなるまで続ける。",
       set: {
         shrinker: {
           isHidden: false,
@@ -169,9 +169,9 @@ export const propertyTestLesson: Lesson = {
         {
           title: "縮める途中の反例",
           fields: BUGGY.shrinkSteps.map((values, i) => ({
-            label: i === 0 ? "見つかった反例" : `${i} 回目`,
+            label: i === 0 ? "見つかった反例" : `${i}回目`,
             value: formatArray(values),
-            note: `出力 ${formatArray(removeAdjacentDuplicates(values))}`,
+            note: `出力${formatArray(removeAdjacentDuplicates(values))}`,
           })),
         },
       ],
@@ -184,11 +184,11 @@ export const propertyTestLesson: Lesson = {
       title: "縮めた反例を読む",
       actor: "shrinker",
       to: ["property"],
-      summary: `${formatArray(SHRUNK)} なら、離れた同じ値が原因だとすぐ分かる`,
-      explain: `最初の反例 ${formatArray(FAILING)} は長く、どこが悪いか読み取りにくい。縮めた ${formatArray(SHRUNK)} は、同じ値が間に別の値を挟んで並んでいるだけなので、「隣しか見ていない」という原因が一目で分かる。`,
+      summary: `${formatArray(SHRUNK)}なら、離れた同じ値が原因だとすぐ分かる`,
+      explain: `最初の反例${formatArray(FAILING)}は長く、どこが悪いか読み取りにくい。縮めた${formatArray(SHRUNK)}は、同じ値が間に別の値を挟んで並んでいるだけなので、「隣しか見ていない」という原因が一目で分かる。`,
       set: {
         shrinker: { tone: "bad" },
-        property: { rows: { 結果: `${formatArray(SHRUNK)} で破れる` } },
+        property: { rows: { 結果: `${formatArray(SHRUNK)}で破れる` } },
       },
     },
     {
@@ -197,8 +197,8 @@ export const propertyTestLesson: Lesson = {
       title: "正しい実装に替える",
       actor: "subject",
       to: ["property"],
-      summary: `出てきた値を覚える実装は、${CORRECT.runs} 回すべて通る`,
-      explain: `一度出てきた値を覚えておき、2回目以降を捨てる実装に替える。同じシード ${SEED} で ${CORRECT.runs} 回試しても、性質は一度も破れない。`,
+      summary: `出てきた値を覚える実装は、${CORRECT.runs}回すべて通る`,
+      explain: `一度出てきた値を覚えておき、2回目以降を捨てる実装に替える。同じシード${SEED}で${CORRECT.runs}回試しても、性質は一度も破れない。`,
       set: {
         subject: {
           tone: "ok",
@@ -206,19 +206,19 @@ export const propertyTestLesson: Lesson = {
         },
         property: {
           tone: "ok",
-          rows: { 結果: CORRECT.failing ? "破れた" : `${CORRECT.runs} 回とも成り立つ` },
+          rows: { 結果: CORRECT.failing ? "破れた" : `${CORRECT.runs}回とも成り立つ` },
         },
         shrinker: { tone: "idle", rows: { 最初: null, 縮めた: "不要" } },
-        generator: { rows: { 試した回数: `${CORRECT.runs} 回` } },
+        generator: { rows: { 試した回数: `${CORRECT.runs}回` } },
       },
       simplified:
-        "通ったのは、この生成器で作った 100 個の入力についてだけで、全部の入力で正しいと証明したわけではない。全部を確かめるには、モデル検査や証明の道具を使う。",
+        "通ったのは、この生成器で作った100個の入力についてだけで、全部の入力で正しいと証明したわけではない。全部を確かめるには、モデル検査や証明の道具を使う。",
     },
   ],
   lab: {
     title: "シードを変える",
     hint: "シード（乱数の種）を変えると、作られる入力の並びが変わる。何回目で見つかるか、最初の反例、縮めた反例がどう変わるかを見る。",
-    inputs: [{ id: "seed", label: "シード（0 以上の整数）", initial: String(SEED) }],
+    inputs: [{ id: "seed", label: "シード（0以上の整数）", initial: String(SEED) }],
     compute: (values): Field[] => {
       const seed = parseSeed(values.seed);
       const result = runPropertyTest(removeAdjacentDuplicates, PROPERTY, {
@@ -228,12 +228,12 @@ export const propertyTestLesson: Lesson = {
       if (!result.failing || !result.shrunk) {
         return [
           { label: "シード", value: String(seed) },
-          { label: "反例", value: `${RUNS} 回で見つからず`, tone: "ok" },
+          { label: "反例", value: `${RUNS}回で見つからず`, tone: "ok" },
         ];
       }
       return [
         { label: "シード", value: String(seed) },
-        { label: "見つかった回", value: `${result.runs} 回目`, tone: "bad" },
+        { label: "見つかった回", value: `${result.runs}回目`, tone: "bad" },
         { label: "最初の反例", value: formatArray(result.failing), isCode: true },
         {
           label: "縮めた反例",
@@ -241,7 +241,7 @@ export const propertyTestLesson: Lesson = {
           tone: "bad",
           isCode: true,
         },
-        { label: "縮めた回数", value: `${result.shrinkSteps.length - 1} 回` },
+        { label: "縮めた回数", value: `${result.shrinkSteps.length - 1}回` },
       ];
     },
   },

@@ -1,4 +1,4 @@
-// この題材だけで使うアイコン（24x24 の viewBox、線画）。共有のアイコンは src/ui/icons.ts にある。
+// この題材だけで使うアイコン（24x24の viewBox、線画）。共有のアイコンは src/ui/icons.ts にある。
 
 export const TOPIC_ICONS: Record<string, string> = {
   process:

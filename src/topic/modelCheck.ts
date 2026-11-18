@@ -27,7 +27,7 @@ export interface TraceStep<S> {
 export interface CheckResult<S> {
   stateCount: number;
   transitionCount: number;
-  /** 深さごとに初めて見つかった状態の数。levels[0] は初期状態の 1。 */
+  /** 深さごとに初めて見つかった状態の数。levels[0] は初期状態の1。 */
   levels: number[];
   /** 見つけた順の状態。 */
   order: S[];

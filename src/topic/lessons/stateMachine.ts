@@ -77,7 +77,6 @@ const links: Link[] = [
     from: actorOf(transition.from),
     to: actorOf(transition.to),
   })),
-  { from: "checker", to: "unpaid" },
 ];
 
 export const stateMachineLesson: Lesson = {
@@ -85,10 +84,10 @@ export const stateMachineLesson: Lesson = {
   category: "model",
   title: "状態と遷移で書く",
   subtitle: "注文を「状態」と「状態を変える操作」で書く",
-  summary: `注文がとりうる状態を並べ、状態を変える操作（遷移）を ${ORDER_ACTIONS.length} つ書く。これだけで、どの順に操作したら何が起きるかを機械がたどれる。TLA+ の Init（初期状態）と Next（次の状態への遷移）に当たる。`,
+  summary: `注文がとりうる状態を並べ、状態を変える操作（遷移）を${ORDER_ACTIONS.length}つ書く。これだけで、どの順に操作したら何が起きるかを機械がたどれる。TLA+ の Init（初期状態）と Next（次の状態への遷移）に当たる。`,
   facts: [
-    { label: "状態", value: `${RESULT.stateCount} 個` },
-    { label: "遷移", value: `${RESULT.transitionCount} 本` },
+    { label: "状態", value: `${RESULT.stateCount}個` },
+    { label: "遷移", value: `${RESULT.transitionCount}本` },
     { label: "初期状態", value: INIT_STATUS },
     { label: "実物の道具", value: "TLA+ の Init と Next" },
   ],
@@ -119,7 +118,7 @@ export const stateMachineLesson: Lesson = {
       title: "遷移を書く",
       actor: "unpaid",
       to: ["paid", "cancelled"],
-      summary: `状態を変える操作を ${ORDER_ACTIONS.length} つ、「どこから・どこへ」の組で書く`,
+      summary: `状態を変える操作を${ORDER_ACTIONS.length}つ、「どこから・どこへ」の組で書く`,
       explain:
         "次に、状態を変える操作（遷移）を「どの状態からできて、どの状態に移るか」の組で書く。書いていない操作はできない、というのが大事な点。TLA+ ではこれを Next という式に書く。",
       set: Object.fromEntries(
@@ -146,7 +145,7 @@ export const stateMachineLesson: Lesson = {
       title: "支払う",
       actor: "unpaid",
       to: ["paid"],
-      summary: `「支払う」で ${PAY.status} に移る`,
+      summary: `「支払う」で${PAY.status}に移る`,
       explain: `いまの状態「${INIT_STATUS}」から「支払う」はできるので、注文は「${PAY.status}」に移る。状態が変わると、できる操作も変わる。`,
       set: {
         unpaid: { tone: "idle", rows: { いま: null } },
@@ -159,7 +158,7 @@ export const stateMachineLesson: Lesson = {
       title: "発送する",
       actor: "paid",
       to: ["shipped"],
-      summary: `「発送する」で ${SHIP.status} に移る`,
+      summary: `「発送する」で${SHIP.status}に移る`,
       explain: `「${PAY.status}」からは「発送する」ができるので、「${SHIP.status}」に移る。ここまでの操作の列を「実行」と呼ぶ。`,
       set: {
         [actorOf(PAY.status)]: { tone: "idle", rows: { いま: null } },
@@ -172,7 +171,7 @@ export const stateMachineLesson: Lesson = {
       title: "取り消せない",
       actor: "shipped",
       summary: `「${CANCEL_LATE.status}」から「${FAILED_ACTION}」はできない`,
-      explain: `続けて「${FAILED_ACTION}」を試すが、「${CANCEL_LATE.status}」から出る遷移に「${FAILED_ACTION}」は無いので、${(CANCEL_LATE.failedAt ?? 0) + 1} 番目の操作で止まる。遷移を表に書いたことで、「発送後に取り消せるか」に仕様の上で答えが出る。`,
+      explain: `続けて「${FAILED_ACTION}」を試すが、「${CANCEL_LATE.status}」から出る遷移に「${FAILED_ACTION}」は無いので、${(CANCEL_LATE.failedAt ?? 0) + 1}番目の操作で止まる。遷移を表に書いたことで、「発送後に取り消せるか」に仕様の上で答えが出る。`,
       set: {
         [actorOf(CANCEL_LATE.status)]: {
           tone: "bad",
@@ -183,7 +182,7 @@ export const stateMachineLesson: Lesson = {
         {
           title: "試した操作の列",
           fields: CANCEL_PLAN.map((name, index) => ({
-            label: `${index + 1} 番目`,
+            label: `${index + 1}番目`,
             value: name,
             tone: index === CANCEL_LATE.failedAt ? "bad" : "ok",
             note: index === CANCEL_LATE.failedAt ? "できない" : "できた",
@@ -196,9 +195,8 @@ export const stateMachineLesson: Lesson = {
       kind: "explore",
       title: "全部の状態をたどる",
       actor: "checker",
-      to: ["unpaid"],
-      summary: `初期状態から ${RESULT.stateCount} 状態・${RESULT.transitionCount} 遷移をすべてたどる`,
-      explain: `初期状態と遷移が書けたので、モデル検査器は初期状態から行ける状態を全部たどれる。${RESULT.stateCount} 状態・${RESULT.transitionCount} 遷移を調べ、「発送したなら支払済み」は${RESULT.violation ? "破れた" : "どこでも成り立つ"}。終わりの状態（${FINAL_STATUSES.join("・")}）以外で止まる所も${RESULT.deadlock ? "あった" : "無い"}。`,
+      summary: `初期状態から${RESULT.stateCount}状態・${RESULT.transitionCount}遷移をすべてたどる`,
+      explain: `初期状態と遷移が書けたので、モデル検査器は初期状態から行ける状態を全部たどれる。${RESULT.stateCount}状態・${RESULT.transitionCount}遷移を調べ、「発送したなら支払済み」は${RESULT.violation ? "破れた" : "どこでも成り立つ"}。終わりの状態（${FINAL_STATUSES.join("・")}）以外で止まる所も${RESULT.deadlock ? "あった" : "無い"}。`,
       set: {
         [actorOf(CANCEL_LATE.status)]: { tone: "idle", rows: { 試した操作: null } },
         ...Object.fromEntries(
@@ -208,14 +206,14 @@ export const stateMachineLesson: Lesson = {
           isHidden: false,
           tone: RESULT.violation ? "bad" : "ok",
           rows: {
-            状態: `${RESULT.stateCount} 個`,
-            遷移: `${RESULT.transitionCount} 本`,
+            状態: `${RESULT.stateCount}個`,
+            遷移: `${RESULT.transitionCount}本`,
             違反: RESULT.violation ? "あり" : "なし",
           },
         },
       },
       simplified:
-        "このモデルの状態は「注文の状態」と「支払ったか」の組だが、正しい仕様では 2 つが連動しているので、状態の数は注文の状態の数と同じになる。TLC は同じことを TLA+ の Init と Next から行う。",
+        "このモデルの状態は「注文の状態」と「支払ったか」の組だが、正しい仕様では2つが連動しているので、状態の数は注文の状態の数と同じになる。TLC は同じことを TLA+ の Init と Next から行う。",
     },
   ],
   lab: {
@@ -232,7 +230,7 @@ export const stateMachineLesson: Lesson = {
         {
           label: "できなかった操作",
           value: isFailed
-            ? `${run.failedAt! + 1} 番目の「${plan[run.failedAt!]}」`
+            ? `${run.failedAt! + 1}番目の「${plan[run.failedAt!]}」`
             : "なし",
           tone: isFailed ? "bad" : "ok",
         },

@@ -11,8 +11,8 @@ export const toolMapLesson: Lesson = {
   summary:
     "並行処理は TLA+、データと権限は Alloy、関数の正しさは検証付きの言語や定理証明、日々のテストは性質ベーステスト。題材ごとに向く道具と、このサイトのレッスンとの対応を並べる。",
   facts: [
-    { label: "題材", value: "4 種類" },
-    { label: "道具", value: "4 種類" },
+    { label: "題材", value: "4種類" },
+    { label: "道具", value: "4種類" },
     { label: "始めるなら", value: "性質ベーステスト" },
     { label: "次に", value: "TLA+ で設計を確かめる" },
   ],

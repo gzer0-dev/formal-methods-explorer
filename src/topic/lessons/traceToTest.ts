@@ -2,12 +2,12 @@ import type { Field, Lesson } from "../../core/types";
 import { check } from "../modelCheck";
 import { counterModel, runSchedule } from "../models";
 
-// 検査器が見つけた最短の反例。trace[0] は初期状態なので、操作は 1 番目から。
+// 検査器が見つけた最短の反例。trace[0] は初期状態なので、操作は1番目から。
 const TRACE = check(counterModel(2, false)).violation!;
 const SCHEDULE = TRACE.slice(1).map((step) => step.action ?? "");
 const BUGGY_RESULT = runSchedule(SCHEDULE, false);
-// 直した実装は「読んで書く」を 1 手で行うので、操作の名前も 1 手のものになる。
-const FIXED_SCHEDULE = ["A が足す", "B が足す"];
+// 直した実装は「読んで書く」を1手で行うので、操作の名前も1手のものになる。
+const FIXED_SCHEDULE = ["Aが足す", "Bが足す"];
 const FIXED_RESULT = runSchedule(FIXED_SCHEDULE, true);
 
 function parseSchedule(text: string | undefined): string[] {
@@ -27,9 +27,9 @@ export const traceToTestLesson: Lesson = {
   category: "testing",
   title: "反例をテストにする",
   subtitle: "検査器の手順を、毎回同じに再現するテストへ",
-  summary: `モデル検査器が見つけた ${SCHEDULE.length} 手の反例を、動く順を固定したテストに書き写す。直す前は毎回 count=${BUGGY_RESULT.count} で落ち、直した後は count=${FIXED_RESULT.count} で通る。`,
+  summary: `モデル検査器が見つけた${SCHEDULE.length}手の反例を、動く順を固定したテストに書き写す。直す前は毎回 count=${BUGGY_RESULT.count}で落ち、直した後は count=${FIXED_RESULT.count}で通る。`,
   facts: [
-    { label: "反例の手数", value: `${SCHEDULE.length} 手` },
+    { label: "反例の手数", value: `${SCHEDULE.length}手` },
     {
       label: "直す前",
       value: `count=${BUGGY_RESULT.count}（${resultLabel(BUGGY_RESULT.isCorrect)}）`,
@@ -50,7 +50,7 @@ export const traceToTestLesson: Lesson = {
       icon: "checker",
       x: 14,
       y: 50,
-      initial: { tone: "bad", rows: { 反例: `${SCHEDULE.length} 手` } },
+      initial: { tone: "bad", rows: { 反例: `${SCHEDULE.length}手` } },
     },
     {
       id: "trace",
@@ -73,7 +73,7 @@ export const traceToTestLesson: Lesson = {
     {
       id: "impl",
       label: "実装",
-      sublabel: "count に 1 を足す",
+      sublabel: "count に1を足す",
       icon: "process",
       x: 86,
       y: 50,
@@ -93,7 +93,7 @@ export const traceToTestLesson: Lesson = {
       title: "反例を受け取る",
       actor: "checker",
       to: ["trace"],
-      summary: `検査器が見つけた最短の反例は ${SCHEDULE.length} 手`,
+      summary: `検査器が見つけた最短の反例は${SCHEDULE.length}手`,
       explain:
         "モデル検査器は、更新が消える並びを最短の手順として返す。この手順は「どの順で動くと壊れるか」の正確な記録なので、そのままテストの材料になる。",
       set: {
@@ -107,7 +107,7 @@ export const traceToTestLesson: Lesson = {
         {
           title: "検査器が見つけた手順",
           fields: TRACE.slice(1).map((step, i) => ({
-            label: `${i + 1} 手目`,
+            label: `${i + 1}手目`,
             value: step.action ?? "",
             note: `count=${step.state.count}`,
           })),
@@ -127,7 +127,7 @@ export const traceToTestLesson: Lesson = {
         test: {
           isHidden: false,
           tone: "wait",
-          rows: { 順: `${SCHEDULE.length} 手を固定` },
+          rows: { 順: `${SCHEDULE.length}手を固定` },
         },
       },
       simplified:
@@ -139,8 +139,8 @@ export const traceToTestLesson: Lesson = {
       title: "直す前は必ず落ちる",
       actor: "test",
       to: ["impl"],
-      summary: `固定した順で流すと count=${BUGGY_RESULT.count} になり、毎回落ちる`,
-      explain: `決めた順で動かすと、2 回足したのに count は ${BUGGY_RESULT.count} になる。順を固定したので、たまに落ちるテストではなく毎回落ちるテストになった。原因を調べている間も、何度でも同じ失敗を見られる。`,
+      summary: `固定した順で流すと count=${BUGGY_RESULT.count}になり、毎回落ちる`,
+      explain: `決めた順で動かすと、2回足したのに count は${BUGGY_RESULT.count}になる。順を固定したので、たまに落ちるテストではなく毎回落ちるテストになった。原因を調べている間も、何度でも同じ失敗を見られる。`,
       set: {
         test: {
           tone: "bad",
@@ -169,8 +169,8 @@ export const traceToTestLesson: Lesson = {
       title: "同じテストが通る",
       actor: "test",
       to: ["impl"],
-      summary: `直した実装では count=${FIXED_RESULT.count} になり、テストが通る`,
-      explain: `同じ2つのプロセスを決めた順で動かすと、count は ${FIXED_RESULT.count} になる。落ちていたテストが通ったことで、直した箇所が本当に原因だったと確かめられる。`,
+      summary: `直した実装では count=${FIXED_RESULT.count}になり、テストが通る`,
+      explain: `同じ2つのプロセスを決めた順で動かすと、count は${FIXED_RESULT.count}になる。落ちていたテストが通ったことで、直した箇所が本当に原因だったと確かめられる。`,
       set: {
         test: {
           tone: "ok",
@@ -184,13 +184,13 @@ export const traceToTestLesson: Lesson = {
         {
           title: "直した後の順",
           fields: FIXED_SCHEDULE.map((step, i) => ({
-            label: `${i + 1} 手目`,
+            label: `${i + 1}手目`,
             value: step,
           })),
         },
       ],
       simplified:
-        "このページのモデルでは、直した実装は操作が「足す」1つになるので、テストの順も「A が足す → B が足す」に書き換えている。実務では、同じ割り込み位置で止めるテストをそのまま直した実装に流す。",
+        "このページのモデルでは、直した実装は操作が「足す」1つになるので、テストの順も「Aが足す → Bが足す」に書き換えている。実務では、同じ割り込み位置で止めるテストをそのまま直した実装に流す。",
     },
     {
       id: "keep",
@@ -210,7 +210,7 @@ export const traceToTestLesson: Lesson = {
   ],
   lab: {
     title: "動く順を決めて流す",
-    hint: "「A が読む」「A が書く」「B が読む」「B が書く」をカンマ区切りで並べる。読む前に書くなど、動けない順を入れるとそこで止まる。足し方は2手の実装で試す。",
+    hint: "「Aが読む」「Aが書く」「Bが読む」「Bが書く」をカンマ区切りで並べる。読む前に書くなど、動けない順を入れるとそこで止まる。足し方は2手の実装で試す。",
     inputs: [
       { id: "schedule", label: "動く順（カンマ区切り）", initial: SCHEDULE.join(",") },
     ],

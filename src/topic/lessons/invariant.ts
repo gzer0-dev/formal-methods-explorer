@@ -48,15 +48,15 @@ export const invariantLesson: Lesson = {
   category: "model",
   title: "不変条件を書く",
   subtitle: "注文はいつでも「支払ってから発送」か",
-  summary: `注文の状態遷移に「発送済み・配達済みなら支払済み」という不変条件を書く。いつもの流れを試すテストは通るが、全部の状態（${BUGGY_CHECK.stateCount} 個）をたどると、未払いのまま発送する ${TRACE.length - 1} 手の反例が見つかる。`,
+  summary: `注文の状態遷移に「発送済み・配達済みなら支払済み」という不変条件を書く。いつもの流れを試すテストは通るが、全部の状態（${BUGGY_CHECK.stateCount}個）をたどると、未払いのまま発送する${TRACE.length - 1}手の反例が見つかる。`,
   facts: [
-    { label: "たどった状態", value: `${BUGGY_CHECK.stateCount} 個` },
+    { label: "たどった状態", value: `${BUGGY_CHECK.stateCount}個` },
     {
       label: "不変条件を破る状態",
-      value: `${BUGGY_CHECK.violationCount} 個`,
+      value: `${BUGGY_CHECK.violationCount}個`,
       tone: "bad",
     },
-    { label: "最短の反例", value: `${TRACE.length - 1} 手`, tone: "bad" },
+    { label: "最短の反例", value: `${TRACE.length - 1}手`, tone: "bad" },
     { label: "実物の道具", value: "TLA+ と TLC（INVARIANT）" },
   ],
   actors: [
@@ -67,7 +67,7 @@ export const invariantLesson: Lesson = {
       icon: "spec",
       x: 14,
       y: 27,
-      initial: { rows: { 操作: `${ORDER_ACTIONS.length} 種類` } },
+      initial: { rows: { 操作: `${ORDER_ACTIONS.length}種類` } },
     },
     {
       id: "order",
@@ -120,7 +120,7 @@ export const invariantLesson: Lesson = {
       title: "状態と操作を書く",
       actor: "spec",
       to: ["order"],
-      summary: `注文の状態と ${ORDER_ACTIONS.length} つの操作を書く。「発送する」の前提条件を書き忘れている`,
+      summary: `注文の状態と${ORDER_ACTIONS.length}つの操作を書く。「発送する」の前提条件を書き忘れている`,
       explain:
         "注文は未払いから始まり、支払う・発送する・届ける・取り消す・返金するで状態が変わる。ところが「発送する」の前提条件（支払済みであること）を書き忘れ、未払いからも発送できる仕様になっている。",
       set: { spec: { rows: { 発送の前提: "書き忘れ" } } },
@@ -156,8 +156,8 @@ export const invariantLesson: Lesson = {
       title: "いつもの流れを試す",
       actor: "test",
       to: ["order"],
-      summary: `「${USUAL_FLOW.join("→")}」を流すと ${USUAL_ON_BUGGY.status} になり、テストは通る`,
-      explain: `テストは「${USUAL_FLOW.join("→")}」の普通の流れを試す。この流れでは必ず支払ってから発送するので、不変条件は破れず、書き忘れに気づかない。正しい仕様で流しても同じ ${USUAL_ON_SPEC.status} になる。`,
+      summary: `「${USUAL_FLOW.join("→")}」を流すと${USUAL_ON_BUGGY.status}になり、テストは通る`,
+      explain: `テストは「${USUAL_FLOW.join("→")}」の普通の流れを試す。この流れでは必ず支払ってから発送するので、不変条件は破れず、書き忘れに気づかない。正しい仕様で流しても同じ${USUAL_ON_SPEC.status}になる。`,
       set: {
         order: {
           rows: { 状態: USUAL_ON_BUGGY.status, 支払: paidLabel(USUAL_ON_BUGGY.isPaid) },
@@ -171,7 +171,7 @@ export const invariantLesson: Lesson = {
         {
           title: "テストで当てた操作",
           fields: USUAL_FLOW.map((name, i) => ({
-            label: `${i + 1} 手目`,
+            label: `${i + 1}手目`,
             value: name,
           })),
         },
@@ -183,8 +183,8 @@ export const invariantLesson: Lesson = {
       title: "全部の状態をたどる",
       actor: "checker",
       to: ["order"],
-      summary: `未払いから行ける状態を ${BUGGY_CHECK.stateCount} 個たどり、それぞれで不変条件を調べる`,
-      explain: `モデル検査器は初期状態から行ける状態を幅優先で全部たどり、1つずつ不変条件を当てる。この仕様では ${BUGGY_CHECK.stateCount} 個の状態があり、そのうち ${BUGGY_CHECK.violationCount} 個で不変条件が破れていた。`,
+      summary: `未払いから行ける状態を${BUGGY_CHECK.stateCount}個たどり、それぞれで不変条件を調べる`,
+      explain: `モデル検査器は初期状態から行ける状態を幅優先で全部たどり、1つずつ不変条件を当てる。この仕様では${BUGGY_CHECK.stateCount}個の状態があり、そのうち${BUGGY_CHECK.violationCount}個で不変条件が破れていた。`,
       set: {
         order: {
           rows: { 状態: BUGGY.init.status, 支払: paidLabel(BUGGY.init.isPaid) },
@@ -193,8 +193,8 @@ export const invariantLesson: Lesson = {
           isHidden: false,
           tone: "wait",
           rows: {
-            状態: `${BUGGY_CHECK.stateCount} 個`,
-            遷移: `${BUGGY_CHECK.transitionCount} 本`,
+            状態: `${BUGGY_CHECK.stateCount}個`,
+            遷移: `${BUGGY_CHECK.transitionCount}本`,
           },
         },
       },
@@ -205,23 +205,23 @@ export const invariantLesson: Lesson = {
       title: "未払いのまま発送",
       actor: "checker",
       to: ["order"],
-      summary: `最短の反例は「${describeTrace(TRACE)}」の ${TRACE.length - 1} 手`,
-      explain: `幅優先なので、いちばん短い反例が先に見つかる。未払いの注文にいきなり「${TRACE[1]!.action}」を当てると ${SHIPPED.status} になり、支払が「${paidLabel(SHIPPED.isPaid)}」のまま。テストが試さなかった順を、検査器は漏らさず調べた。`,
+      summary: `最短の反例は「${describeTrace(TRACE)}」の${TRACE.length - 1}手`,
+      explain: `幅優先なので、いちばん短い反例が先に見つかる。未払いの注文にいきなり「${TRACE[1]!.action}」を当てると${SHIPPED.status}になり、支払が「${paidLabel(SHIPPED.isPaid)}」のまま。テストが試さなかった順を、検査器は漏らさず調べた。`,
       set: {
         order: {
           tone: "bad",
           rows: { 状態: SHIPPED.status, 支払: paidLabel(SHIPPED.isPaid) },
         },
         invariant: { tone: "bad", rows: { 判定: "破れた" } },
-        checker: { tone: "bad", rows: { 反例: `${TRACE.length - 1} 手で発見` } },
+        checker: { tone: "bad", rows: { 反例: `${TRACE.length - 1}手で発見` } },
       },
       detail: [
         {
           title: "検査器が見つけた反例",
           fields: TRACE.map((step, i) => ({
-            label: i === 0 ? "初期状態" : `${i} 手目`,
+            label: i === 0 ? "初期状態" : `${i}手目`,
             value: step.action ?? "（はじめ）",
-            note: `${step.state.status}・支払 ${paidLabel(step.state.isPaid)}`,
+            note: `${step.state.status}・支払${paidLabel(step.state.isPaid)}`,
           })),
         },
       ],
@@ -232,8 +232,8 @@ export const invariantLesson: Lesson = {
       title: "前提条件を足す",
       actor: "spec",
       to: ["order"],
-      summary: `「発送するのは支払済みのときだけ」と書くと、${FIXED_CHECK.stateCount} 状態すべてで不変条件が成り立つ`,
-      explain: `「発送する」に前提条件「支払済みのときだけ」を足して、もう一度全部たどる。状態は ${FIXED_CHECK.stateCount} 個に減り、どの状態でも不変条件が成り立つ。反例は見つからない。`,
+      summary: `「発送するのは支払済みのときだけ」と書くと、${FIXED_CHECK.stateCount}状態すべてで不変条件が成り立つ`,
+      explain: `「発送する」に前提条件「支払済みのときだけ」を足して、もう一度全部たどる。状態は${FIXED_CHECK.stateCount}個に減り、どの状態でも不変条件が成り立つ。反例は見つからない。`,
       set: {
         spec: { tone: "ok", rows: { 発送の前提: "支払済み" } },
         order: {
@@ -244,8 +244,8 @@ export const invariantLesson: Lesson = {
         checker: {
           tone: "ok",
           rows: {
-            状態: `${FIXED_CHECK.stateCount} 個`,
-            遷移: `${FIXED_CHECK.transitionCount} 本`,
+            状態: `${FIXED_CHECK.stateCount}個`,
+            遷移: `${FIXED_CHECK.transitionCount}本`,
             反例: FIXED_CHECK.violation ? "あり" : "なし",
           },
         },
@@ -266,10 +266,10 @@ export const invariantLesson: Lesson = {
       const result = check(orderModel(hasBug));
       return [
         { label: "仕様", value: hasBug ? "書き忘れあり" : "正しい仕様" },
-        { label: "たどった状態", value: `${result.stateCount} 個` },
+        { label: "たどった状態", value: `${result.stateCount}個` },
         {
           label: "不変条件を破る状態",
-          value: `${result.violationCount} 個`,
+          value: `${result.violationCount}個`,
           tone: result.violationCount > 0 ? "bad" : "ok",
         },
         {

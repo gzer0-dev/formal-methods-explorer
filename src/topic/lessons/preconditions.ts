@@ -21,7 +21,7 @@ const EXAMPLE_AMOUNT = 3;
 const EXAMPLE_AFTER = withdraw(EXAMPLE_BALANCE, EXAMPLE_AMOUNT);
 
 function describeCase(found: WithdrawCase): string {
-  return `残高 ${found.balance}・金額 ${found.amount} → 結果 ${found.after}`;
+  return `残高${found.balance}・金額${found.amount} → 結果${found.after}`;
 }
 
 function parseMax(text: string | undefined, fallback: number): number {
@@ -38,11 +38,11 @@ export const preconditionsLesson: Lesson = {
   category: "spec",
   title: "事前条件と事後条件",
   subtitle: "引き出しの関数に契約を書く",
-  summary: `残高から金額を引く関数に、呼ぶ前の約束（事前条件）と呼んだ後の約束（事後条件）を書く。「金額 > 0」だけでは ${WEAK.checked} 通り中に反例があり、「金額 ≦ 残高」を足すと ${STRONG.checked} 通りすべてで成り立つ。`,
+  summary: `残高から金額を引く関数に、呼ぶ前の約束（事前条件）と呼んだ後の約束（事後条件）を書く。「金額 > 0」だけでは${WEAK.checked}通り中に反例があり、「金額 ≦ 残高」を足すと${STRONG.checked}通りすべてで成り立つ。`,
   facts: [
-    { label: "調べた範囲", value: `残高 0〜${MAX_BALANCE}・金額 0〜${MAX_AMOUNT}` },
+    { label: "調べた範囲", value: `残高0〜${MAX_BALANCE}・金額0〜${MAX_AMOUNT}` },
     { label: "最初の反例", value: describeCase(COUNTER), tone: "bad" },
-    { label: "直した後", value: `${STRONG.checked} 通りすべて成立`, tone: "ok" },
+    { label: "直した後", value: `${STRONG.checked}通りすべて成立`, tone: "ok" },
     { label: "実物の道具", value: "Dafny など" },
   ],
   actors: [
@@ -103,8 +103,8 @@ export const preconditionsLesson: Lesson = {
       title: "関数を呼ぶ",
       actor: "caller",
       to: ["withdraw"],
-      summary: `残高 ${EXAMPLE_BALANCE} から ${EXAMPLE_AMOUNT} を引くと ${EXAMPLE_AFTER} が返る`,
-      explain: `withdraw は残高から金額を引いた値を返すだけの関数。残高 ${EXAMPLE_BALANCE} から ${EXAMPLE_AMOUNT} を引けば ${EXAMPLE_AFTER} になる。このままでは、どんな値で呼んでよいのか、何が返ると約束しているのかが書かれていない。`,
+      summary: `残高${EXAMPLE_BALANCE}から${EXAMPLE_AMOUNT}を引くと${EXAMPLE_AFTER}が返る`,
+      explain: `withdraw は残高から金額を引いた値を返すだけの関数。残高${EXAMPLE_BALANCE}から${EXAMPLE_AMOUNT}を引けば${EXAMPLE_AFTER}になる。このままでは、どんな値で呼んでよいのか、何が返ると約束しているのかが書かれていない。`,
       set: {
         caller: {
           rows: { 残高: String(EXAMPLE_BALANCE), 金額: String(EXAMPLE_AMOUNT) },
@@ -128,7 +128,7 @@ export const preconditionsLesson: Lesson = {
       kind: "spec",
       title: "事後条件を書く",
       actor: "post",
-      summary: "関数が守る約束として「結果 ≧ 0 かつ 結果 = 残高 − 金額」を書く",
+      summary: "関数が守る約束として「結果 ≧ 0、かつ 結果 = 残高 − 金額」を書く",
       explain:
         "事後条件（postcondition）は、事前条件が守られたときに関数が守る約束。「残高がマイナスにならず、ちょうど金額分だけ減る」を書いた。事前条件を満たす呼び出しなら、必ずこれが成り立つはずだ。",
       set: {
@@ -144,8 +144,8 @@ export const preconditionsLesson: Lesson = {
       title: "範囲内を総当たり",
       actor: "checker",
       to: ["withdraw"],
-      summary: `残高 0〜${MAX_BALANCE}・金額 0〜${MAX_AMOUNT} のうち事前条件を満たす ${WEAK.checked} 通りで事後条件を調べる`,
-      explain: `検査器は、残高 0〜${MAX_BALANCE} と金額 0〜${MAX_AMOUNT} の組を全部作り、事前条件を満たす ${WEAK.checked} 通りだけで関数を呼んで事後条件を確かめる。事前条件を破る呼び出しは、関数の責任ではないので調べない。`,
+      summary: `残高0〜${MAX_BALANCE}・金額0〜${MAX_AMOUNT}のうち事前条件を満たす${WEAK.checked}通りで事後条件を調べる`,
+      explain: `検査器は、残高0〜${MAX_BALANCE}と金額0〜${MAX_AMOUNT}の組を全部作り、事前条件を満たす${WEAK.checked}通りだけで関数を呼んで事後条件を確かめる。事前条件を破る呼び出しは、関数の責任ではないので調べない。`,
       set: {
         caller: { rows: { 残高: null, 金額: null } },
         withdraw: { rows: { 結果: null } },
@@ -153,8 +153,8 @@ export const preconditionsLesson: Lesson = {
           isHidden: false,
           tone: "wait",
           rows: {
-            範囲: `残高 0〜${MAX_BALANCE}・金額 0〜${MAX_AMOUNT}`,
-            調べた: `${WEAK.checked} 通り`,
+            範囲: `残高0〜${MAX_BALANCE}・金額0〜${MAX_AMOUNT}`,
+            調べた: `${WEAK.checked}通り`,
           },
         },
       },
@@ -166,7 +166,7 @@ export const preconditionsLesson: Lesson = {
       actor: "checker",
       to: ["withdraw"],
       summary: `最初の反例: ${describeCase(COUNTER)}`,
-      explain: `残高 ${COUNTER.balance} から ${COUNTER.amount} を引くと ${COUNTER.after} になり、「結果 ≧ 0」が破れた。金額 > 0 は守っているので、呼び出し側の約束違反ではない。事前条件が弱すぎて、関数が約束を守れない呼び出しを許していた。`,
+      explain: `残高${COUNTER.balance}から${COUNTER.amount}を引くと${COUNTER.after}になり、「結果 ≧ 0」が破れた。「金額 > 0」は守っているので、呼び出し側の約束違反ではない。事前条件が弱すぎて、関数が約束を守れない呼び出しを許していた。`,
       set: {
         caller: {
           rows: { 残高: String(COUNTER.balance), 金額: String(COUNTER.amount) },
@@ -182,8 +182,8 @@ export const preconditionsLesson: Lesson = {
       title: "事前条件を強める",
       actor: "pre",
       to: ["withdraw"],
-      summary: `「金額 ≦ 残高」を足すと、${STRONG.checked} 通りすべてで事後条件が成り立つ`,
-      explain: `事前条件に「金額 ≦ 残高」を足し、残高より多くは引けないと呼び出し側に約束させる。調べる組は ${STRONG.checked} 通りに減り、そのすべてで事後条件が成り立った。関数の中身は変えず、約束の書き方を直しただけで反例が消えた。`,
+      summary: `「金額 ≦ 残高」を足すと、${STRONG.checked}通りすべてで事後条件が成り立つ`,
+      explain: `事前条件に「金額 ≦ 残高」を足し、残高より多くは引けないと呼び出し側に約束させる。調べる組は${STRONG.checked}通りに減り、そのすべてで事後条件が成り立った。関数の中身は変えず、約束の書き方を直しただけで反例が消えた。`,
       set: {
         pre: { tone: "ok", rows: { 条件: "金額 > 0", 追加: "金額 ≦ 残高" } },
         caller: { rows: { 残高: null, 金額: null } },
@@ -192,13 +192,13 @@ export const preconditionsLesson: Lesson = {
         checker: {
           tone: "ok",
           rows: {
-            調べた: `${STRONG.checked} 通り`,
+            調べた: `${STRONG.checked}通り`,
             反例: STRONG.counterexample ? "あり" : "なし",
           },
         },
       },
       simplified:
-        "Dafny のような道具は、事前条件と事後条件を書くと、証明によってすべての入力で成り立つことを確かめる。ここでは残高と金額の範囲を 0〜5 に区切り、その中を総当たりしているだけなので、範囲の外は確かめていない。",
+        "Dafny のような道具は、事前条件と事後条件を書くと、証明によってすべての入力で成り立つことを確かめる。ここでは残高と金額の範囲を0〜5に区切り、その中を総当たりしているだけなので、範囲の外は確かめていない。",
     },
   ],
   lab: {
@@ -215,12 +215,12 @@ export const preconditionsLesson: Lesson = {
       const requireEnough = parseRequireEnough(values.enough);
       const result = checkWithdraw({ maxBalance, maxAmount, requireEnough });
       return [
-        { label: "範囲", value: `残高 0〜${maxBalance}・金額 0〜${maxAmount}` },
+        { label: "範囲", value: `残高0〜${maxBalance}・金額0〜${maxAmount}` },
         {
           label: "事前条件",
-          value: requireEnough ? "金額 > 0 かつ 金額 ≦ 残高" : "金額 > 0",
+          value: requireEnough ? "金額 > 0かつ 金額 ≦ 残高" : "金額 > 0",
         },
-        { label: "調べた組", value: `${result.checked} 通り` },
+        { label: "調べた組", value: `${result.checked}通り` },
         {
           label: "最初の反例",
           value: result.counterexample ? describeCase(result.counterexample) : "なし",

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { check, checkEventually, countExecutions, type Model } from "./modelCheck";
 
-// 0 → 1 → 2 と進み、2 で止まる小さなモデル。toBad なら 0 から 9 へも行ける。
+// 0 → 1 → 2と進み、2で止まる小さなモデル。toBad なら0から9へも行ける。
 function line(toBad: boolean): Model<number> {
   return {
     init: 0,

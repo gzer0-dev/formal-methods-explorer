@@ -50,14 +50,14 @@ export const transitionCoverLesson: Lesson = {
   category: "testing",
   title: "遷移を全部通すテスト",
   subtitle: "状態遷移のモデルから、テストの手順を作る",
-  summary: `注文の状態遷移 ${ORDER_ACTIONS.length} 本を、モデルから作った ${TESTS.length} 本のテストで全部1回は通す。モデルベーステストの最小の形。`,
+  summary: `注文の状態遷移${ORDER_ACTIONS.length}本を、モデルから作った${TESTS.length}本のテストで全部1回は通す。モデルベーステストの最小の形。`,
   facts: [
-    { label: "状態", value: `${STATUSES.size} 個` },
-    { label: "遷移", value: `${ORDER_ACTIONS.length} 本` },
-    { label: "作ったテスト", value: `${TESTS.length} 本`, tone: "ok" },
+    { label: "状態", value: `${STATUSES.size}個` },
+    { label: "遷移", value: `${ORDER_ACTIONS.length}本` },
+    { label: "作ったテスト", value: `${TESTS.length}本`, tone: "ok" },
     {
       label: "通った遷移",
-      value: `${COVERED.size} / ${ORDER_ACTIONS.length} 本`,
+      value: `${ORDER_ACTIONS.length}本中${COVERED.size}本`,
       tone: "ok",
     },
   ],
@@ -115,7 +115,7 @@ export const transitionCoverLesson: Lesson = {
       kind: "spec",
       title: "状態遷移を書く",
       actor: "model",
-      summary: `注文の状態 ${STATUSES.size} 個と遷移 ${ORDER_ACTIONS.length} 本を書く`,
+      summary: `注文の状態${STATUSES.size}個と遷移${ORDER_ACTIONS.length}本を書く`,
       explain:
         "注文は「未払い」から始まり、支払う・発送する・届ける・取り消す・返金する、の操作で状態が移る。どの状態からどの操作ができるかを、表として書き出したものがモデルになる。",
       set: {
@@ -123,8 +123,8 @@ export const transitionCoverLesson: Lesson = {
           tone: "wait",
           rows: {
             初期状態: INITIAL,
-            状態: `${STATUSES.size} 個`,
-            遷移: `${ORDER_ACTIONS.length} 本`,
+            状態: `${STATUSES.size}個`,
+            遷移: `${ORDER_ACTIONS.length}本`,
           },
         },
       },
@@ -144,11 +144,11 @@ export const transitionCoverLesson: Lesson = {
       title: "各遷移への最短の道",
       actor: "generator",
       to: ["model"],
-      summary: `遷移ごとに「そこへ行く最短の道＋その遷移」を作り、${CANDIDATES.length} 本の候補にする`,
+      summary: `遷移ごとに「そこへ行く最短の道＋その遷移」を作り、${CANDIDATES.length}本の候補にする`,
       explain:
         "遷移を1本ずつ取り上げ、初期状態からその遷移の出発点までの最短の操作列を幅優先で探し、最後にその遷移を足す。こうすると、どの遷移にも必ずそれを通る手順が1本できる。",
       set: {
-        generator: { tone: "wait", rows: { 候補: `${CANDIDATES.length} 本` } },
+        generator: { tone: "wait", rows: { 候補: `${CANDIDATES.length}本` } },
       },
       detail: [
         {
@@ -165,14 +165,14 @@ export const transitionCoverLesson: Lesson = {
       kind: "explore",
       title: "含まれる道を捨てる",
       actor: "generator",
-      summary: `他の道の先頭部分に含まれる ${DROPPED.length} 本を捨て、${TESTS.length} 本に減らす`,
+      summary: `他の道の先頭部分に含まれる${DROPPED.length}本を捨て、${TESTS.length}本に減らす`,
       explain: `「${formatPath(DROPPED[0]?.path ?? [])}」は、もっと長い手順の先頭部分にそのまま含まれている。長い方を流せば同じ遷移を通るので、短い方は捨ててよい。`,
       set: {
         generator: {
           rows: {
-            候補: `${CANDIDATES.length} 本`,
-            捨てた: `${DROPPED.length} 本`,
-            残り: `${TESTS.length} 本`,
+            候補: `${CANDIDATES.length}本`,
+            捨てた: `${DROPPED.length}本`,
+            残り: `${TESTS.length}本`,
           },
         },
       },
@@ -194,7 +194,7 @@ export const transitionCoverLesson: Lesson = {
       actor: "generator",
       to: ["test1"],
       summary: formatPath(TESTS[0] ?? []),
-      explain: `1本目は ${formatPath(TESTS[0] ?? [])}。支払いから配達までの、いちばん長い普通の流れを通る。`,
+      explain: `1本目は${formatPath(TESTS[0] ?? [])}。支払いから配達までの、いちばん長い普通の流れを通る。`,
       set: { test1: testCard(0) },
     },
     {
@@ -204,7 +204,7 @@ export const transitionCoverLesson: Lesson = {
       actor: "generator",
       to: ["test2"],
       summary: formatPath(TESTS[1] ?? []),
-      explain: `2本目は ${formatPath(TESTS[1] ?? [])} の1手だけ。支払う前に取り消す流れは、1本目とは最初の操作から分かれるので別のテストになる。`,
+      explain: `2本目は${formatPath(TESTS[1] ?? [])}の1手だけ。支払う前に取り消す流れは、1本目とは最初の操作から分かれるので別のテストになる。`,
       set: { test2: testCard(1) },
     },
     {
@@ -214,7 +214,7 @@ export const transitionCoverLesson: Lesson = {
       actor: "generator",
       to: ["test3"],
       summary: formatPath(TESTS[2] ?? []),
-      explain: `3本目は ${formatPath(TESTS[2] ?? [])}。支払った後に発送ではなく返金へ分かれる流れを通る。`,
+      explain: `3本目は${formatPath(TESTS[2] ?? [])}。支払った後に発送ではなく返金へ分かれる流れを通る。`,
       set: { test3: testCard(2) },
     },
     {
@@ -223,13 +223,13 @@ export const transitionCoverLesson: Lesson = {
       title: "全部の遷移を通った",
       actor: "model",
       to: ["test1", "test2", "test3"],
-      summary: `${TESTS.length} 本で遷移 ${COVERED.size} / ${ORDER_ACTIONS.length} 本を通る`,
+      summary: `${TESTS.length}本で遷移${ORDER_ACTIONS.length}本中${COVERED.size}本を通る`,
       explain:
         "3本のテストを合わせると、5本の遷移をどれも1回は通る。手で思いついた順に書くと抜けやすい「支払う前の取り消し」や「支払後の返金」も、モデルから機械的に作れば漏れない。",
       set: {
         model: {
           tone: "ok",
-          rows: { 通った遷移: `${COVERED.size} / ${ORDER_ACTIONS.length} 本` },
+          rows: { 通った遷移: `${ORDER_ACTIONS.length}本中${COVERED.size}本` },
         },
         generator: { tone: "ok" },
       },
@@ -254,7 +254,7 @@ export const transitionCoverLesson: Lesson = {
       const unreachable = chosen.filter((t) => !covered.has(t.name));
       return [
         { label: "選んだ遷移", value: chosen.map((t) => t.name).join("・") },
-        { label: "テストの本数", value: `${tests.length} 本` },
+        { label: "テストの本数", value: `${tests.length}本` },
         ...tests.map((path, i) => ({
           label: `テスト${i + 1}`,
           value: formatPath(path),

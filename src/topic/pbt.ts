@@ -1,7 +1,7 @@
 // 性質ベーステストの最小の実装（fast-check や Hypothesis がやっていることの芯）。
 // 乱数はシード付きにする。Math.random だと画面とテストが毎回変わり、説明の数字が合わなくなる。
 
-/** 32 ビットの小さな擬似乱数（mulberry32）。0 以上 1 未満を返す関数を作る。 */
+/** 32ビットの小さな擬似乱数（mulberry32）。0以上1未満を返す関数を作る。 */
 export function mulberry32(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
@@ -16,7 +16,7 @@ export function mulberry32(seed: number): () => number {
 export const MAX_LENGTH = 8;
 export const MAX_VALUE = 9;
 
-/** 長さ 0〜8、値 0〜9 の配列を作る。 */
+/** 長さ0〜8、値0〜9の配列を作る。 */
 export function generateArray(random: () => number): number[] {
   const length = Math.floor(random() * (MAX_LENGTH + 1));
   return Array.from({ length }, () => Math.floor(random() * (MAX_VALUE + 1)));
@@ -36,7 +36,7 @@ export function hasNoDuplicates(values: number[]): boolean {
   return new Set(values).size === values.length;
 }
 
-/** 1 つ小さい候補を並べる。先に要素を 1 つ消す候補、次に値を 0 や 1 つ小さい値に変える候補。 */
+/** 1つ小さい候補を並べる。先に要素を1つ消す候補、次に値を0や1つ小さい値に変える候補。 */
 export function shrinkCandidates(values: number[]): number[][] {
   const candidates: number[][] = [];
   values.forEach((_, i) => candidates.push(values.filter((__, j) => j !== i)));

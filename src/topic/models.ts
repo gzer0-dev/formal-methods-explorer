@@ -2,7 +2,7 @@
 
 import type { Action, Model } from "./modelCheck";
 
-// ---- カウンタ: 複数のプロセスが共有の変数 count に 1 を足す ----
+// ---- カウンタ: 複数のプロセスが共有の変数 count に1を足す ----
 
 export type CounterPc = "read" | "write" | "done";
 
@@ -38,8 +38,8 @@ export function isCounterCorrect(state: CounterState): boolean {
 }
 
 /**
- * isAtomic が false なら「count を読む」「読んだ値 + 1 を書く」の 2 手に分かれる（よくある実装）。
- * true なら 1 手で足す（ロックや原子的な命令を使った実装）。
+ * isAtomic が false なら「count を読む」「読んだ値 + 1を書く」の2手に分かれる（よくある実装）。
+ * true なら1手で足す（ロックや原子的な命令を使った実装）。
  */
 export function counterModel(
   processCount: number,
@@ -50,7 +50,7 @@ export function counterModel(
     const name = processName(i);
     if (isAtomic) {
       actions.push({
-        name: `${name} が足す`,
+        name: `${name}が足す`,
         enabled: (s) => s.pcs[i] === "read",
         next: (s) => withProcess(s, i, "done", null, s.count + 1),
       });
@@ -58,12 +58,12 @@ export function counterModel(
     }
     actions.push(
       {
-        name: `${name} が読む`,
+        name: `${name}が読む`,
         enabled: (s) => s.pcs[i] === "read",
         next: (s) => withProcess(s, i, "write", s.count, s.count),
       },
       {
-        name: `${name} が書く`,
+        name: `${name}が書く`,
         enabled: (s) => s.pcs[i] === "write",
         next: (s) => withProcess(s, i, "done", null, (s.tmps[i] ?? 0) + 1),
       },
@@ -90,7 +90,13 @@ export interface ScheduleResult {
 
 /** 決めた順にプロセスを動かす（反例をテストとして再現する）。順に無い操作名や、動けない操作は例外にする。 */
 export function runSchedule(schedule: string[], isAtomic: boolean): ScheduleResult {
-  const processCount = new Set(schedule.map((step) => step.split(" ")[0])).size;
+  // 操作名の先頭のプロセス名（A, B, ...）のうち、いちばん後ろの名前までのプロセスを用意する。
+  const processCount = Math.max(
+    1,
+    ...schedule.map(
+      (step) => PROCESS_NAMES.findIndex((name) => step.startsWith(name)) + 1,
+    ),
+  );
   const model = counterModel(processCount, isAtomic);
   let state = model.init;
   for (const step of schedule) {
@@ -113,17 +119,17 @@ export function describeCounter(state: CounterState): string {
     .join(" ");
 }
 
-// ---- 2 つのロック: 2 つのスレッドが L1 と L2 を両方取ってから仕事をする ----
+// ---- 2つのロック: 2つのスレッドがL1とL2を両方取ってから仕事をする ----
 
 export type LockName = "L1" | "L2";
 
 export interface LockState {
-  /** 0=1つ目待ち 1=2つ目待ち 2=両方持っている 3=終わり */
+  /** 0=1つ目待ち1=2つ目待ち2=両方持っている3=終わり */
   pcs: [number, number];
   owners: Record<LockName, string | null>;
 }
 
-/** isSameOrder が false なら T2 は L2 → L1 の順で取る（T1 は常に L1 → L2）。 */
+/** isSameOrder が false なら T2はL2 → L1の順で取る（T1は常に L1 → L2）。 */
 export function lockModel(isSameOrder: boolean): Model<LockState> {
   const orders: [LockName, LockName][] = [
     ["L1", "L2"],
@@ -136,7 +142,7 @@ export function lockModel(isSameOrder: boolean): Model<LockState> {
       i === 0 ? [pc, s.pcs[1]] : [s.pcs[0], pc];
     order.forEach((lock, position) => {
       actions.push({
-        name: `${thread} が ${lock} を取る`,
+        name: `${thread}が${lock}を取る`,
         enabled: (s) => s.pcs[i] === position && s.owners[lock] === null,
         next: (s) => ({
           pcs: setPc(s, position + 1),
@@ -145,7 +151,7 @@ export function lockModel(isSameOrder: boolean): Model<LockState> {
       });
     });
     actions.push({
-      name: `${thread} が手放す`,
+      name: `${thread}が手放す`,
       enabled: (s) => s.pcs[i] === 2,
       next: (s) => ({ pcs: setPc(s, 3), owners: { L1: null, L2: null } }),
     });

@@ -21,7 +21,7 @@ function describeCycle(cycle: TraceStep<JobState>[]): string {
     .join(" → ");
 }
 
-/** 空欄や「なし」は無制限（null）。数字は 0〜5 の上限。読めない入力も無制限に戻す。 */
+/** 空欄や「なし」は無制限（null）。数字は0〜5の上限。読めない入力も無制限に戻す。 */
 function parseLimit(text: string | undefined): number | null {
   const trimmed = (text ?? "").trim();
   if (trimmed === "" || trimmed.includes("なし")) return null;
@@ -34,7 +34,7 @@ export const livenessLesson: Lesson = {
   category: "model",
   title: "いつか必ず終わるか",
   subtitle: "失敗したらやり直すジョブ",
-  summary: `失敗したら待ちに戻してやり直すジョブが「いつか必ず終わる」かを調べる。リトライが無制限だと、失敗し続けて永遠に終わらない輪が反例として見つかる。上限を ${LIMIT} 回にすると必ず終わる。`,
+  summary: `失敗したら待ちに戻してやり直すジョブが「いつか必ず終わる」かを調べる。リトライが無制限だと、失敗し続けて永遠に終わらない輪が反例として見つかる。上限を${LIMIT}回にすると必ず終わる。`,
   facts: [
     {
       label: "無制限のとき",
@@ -42,11 +42,11 @@ export const livenessLesson: Lesson = {
       tone: "bad",
     },
     {
-      label: "上限 2 回のとき",
+      label: "上限2回のとき",
       value: LIMITED_RESULT.holds ? "必ず終わる" : "終わらない実行がある",
       tone: "ok",
     },
-    { label: "反例の形", value: `${CYCLE.length - 1} 手で一周する輪` },
+    { label: "反例の形", value: `${CYCLE.length - 1}手で一周する輪` },
     { label: "実物の道具", value: "TLA+ と TLC（時相論理）" },
   ],
   actors: [
@@ -141,13 +141,13 @@ export const livenessLesson: Lesson = {
       title: "終わらない道を探す",
       actor: "checker",
       to: ["job"],
-      summary: `終わっていない状態だけをたどり、輪か行き止まりを探す（状態は全部で ${UNLIMITED_CHECK.stateCount} 個）`,
-      explain: `検査器は、成功や断念に着いていない状態だけをたどる。そこで同じ状態に戻る輪が見つかれば、その輪を回り続ける実行は永遠に終わらない。状態は全部で ${UNLIMITED_CHECK.stateCount} 個しかないが、輪があれば実行の長さに限りはない。`,
+      summary: `終わっていない状態だけをたどり、輪か行き止まりを探す（状態は全部で${UNLIMITED_CHECK.stateCount}個）`,
+      explain: `検査器は、成功や断念に着いていない状態だけをたどる。そこで同じ状態に戻る輪が見つかれば、その輪を回り続ける実行は永遠に終わらない。状態は全部で${UNLIMITED_CHECK.stateCount}個しかないが、輪があれば実行の長さに限りはない。`,
       set: {
         checker: {
           isHidden: false,
           tone: "wait",
-          rows: { 状態: `${UNLIMITED_CHECK.stateCount} 個` },
+          rows: { 状態: `${UNLIMITED_CHECK.stateCount}個` },
         },
       },
     },
@@ -170,7 +170,7 @@ export const livenessLesson: Lesson = {
       set: {
         job: { tone: "bad", rows: { 状態: CYCLE[2]!.state.status } },
         goal: { tone: "bad", rows: { 判定: "破れた" } },
-        checker: { tone: "bad", rows: { 反例: `${CYCLE.length - 1} 手の輪` } },
+        checker: { tone: "bad", rows: { 反例: `${CYCLE.length - 1}手の輪` } },
       },
       detail: [
         {
@@ -184,13 +184,13 @@ export const livenessLesson: Lesson = {
     {
       id: "fix",
       kind: "fix",
-      title: `上限を ${LIMIT} 回にする`,
+      title: `上限を${LIMIT}回にする`,
       actor: "rule",
       to: ["job"],
-      summary: `リトライを ${LIMIT} 回までにすると、どの実行も成功か断念で終わる`,
-      explain: `リトライの回数を数え、${LIMIT} 回失敗したら諦めて断念にする。回数が状態に入るので状態は ${LIMITED_CHECK.stateCount} 個に増えるが、同じ状態に戻る輪はなくなり、どの実行もいつか終わる。`,
+      summary: `リトライを${LIMIT}回までにすると、どの実行も成功か断念で終わる`,
+      explain: `リトライの回数を数え、${LIMIT}回失敗したら諦めて断念にする。回数が状態に入るので状態は${LIMITED_CHECK.stateCount}個に増えるが、同じ状態に戻る輪はなくなり、どの実行もいつか終わる。`,
       set: {
-        rule: { tone: "ok", rows: { 上限: `${LIMIT} 回` } },
+        rule: { tone: "ok", rows: { 上限: `${LIMIT}回` } },
         job: { tone: "ok", rows: { 状態: "待ち" } },
         goal: {
           tone: LIMITED_RESULT.holds ? "ok" : "bad",
@@ -199,7 +199,7 @@ export const livenessLesson: Lesson = {
         checker: {
           tone: "ok",
           rows: {
-            状態: `${LIMITED_CHECK.stateCount} 個`,
+            状態: `${LIMITED_CHECK.stateCount}個`,
             反例: LIMITED_RESULT.holds ? "なし" : "あり",
           },
         },
@@ -210,14 +210,14 @@ export const livenessLesson: Lesson = {
   ],
   lab: {
     title: "リトライの上限を変える",
-    hint: "空欄か「なし」なら無制限、0〜5 の数字ならその回数まで。上限があると、状態は増えるが輪は消える。",
+    hint: "空欄か「なし」なら無制限、0〜5の数字ならその回数まで。上限があると、状態は増えるが輪は消える。",
     inputs: [{ id: "limit", label: "リトライの上限（なし / 0〜5）", initial: "なし" }],
     compute: (values): Field[] => {
       const limit = parseLimit(values.limit);
       const model = jobModel(limit);
       const result = checkEventually(model, isJobFinished);
       return [
-        { label: "上限", value: limit === null ? "なし（無制限）" : `${limit} 回` },
+        { label: "上限", value: limit === null ? "なし（無制限）" : `${limit}回` },
         {
           label: "いつか必ず終わるか",
           value: result.holds ? "成り立つ" : "成り立たない",
@@ -228,7 +228,7 @@ export const livenessLesson: Lesson = {
           value: result.cycle ? describeCycle(result.cycle) : "なし",
           tone: result.cycle ? "bad" : "ok",
         },
-        { label: "状態の数", value: `${check(model).stateCount} 個` },
+        { label: "状態の数", value: `${check(model).stateCount}個` },
       ];
     },
   },

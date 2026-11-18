@@ -13,7 +13,7 @@ const NO_CYCLE = checkBossInstances({ forbidSelf: true, forbidCycle: true });
 const FREE_COUNTER = FREE.firstCounterexample!;
 const NO_SELF_COUNTER = NO_SELF.firstCounterexample!;
 
-/** 反例の形を、3 人のカードの「上司」の行に写す。自分の上司筋になっている人は赤にする。 */
+/** 反例の形を、3人のカードの「上司」の行に写す。自分の上司筋になっている人は赤にする。 */
 function showInstance(
   instance: BossInstance,
   badPeople: string[],
@@ -47,17 +47,17 @@ export const smallScopeLesson: Lesson = {
   category: "spec",
   title: "小さな範囲で全部調べる",
   subtitle: "3人の「上司」の関係を全部作る",
-  summary: `3 人の「上司」の関係を、あり得る形をすべて作って調べる。制約なしでは ${FREE.total} 通り中 ${FREE.counterexampleCount} 通り、「自分を上司にしない」を足すと ${NO_SELF.total} 通り中 ${NO_SELF.counterexampleCount} 通りが反例。「輪を作らない」まで足すと ${NO_CYCLE.total} 通りで反例 ${NO_CYCLE.counterexampleCount}。`,
+  summary: `3人の「上司」の関係を、あり得る形をすべて作って調べる。制約なしでは${FREE.total}通り中${FREE.counterexampleCount}通り、「自分を上司にしない」を足すと${NO_SELF.total}通り中${NO_SELF.counterexampleCount}通りが反例。「輪を作らない」まで足すと${NO_CYCLE.total}通りで反例${NO_CYCLE.counterexampleCount}。`,
   facts: [
-    { label: "人数", value: `${PEOPLE.length} 人（${PEOPLE.join("・")}）` },
+    { label: "人数", value: `${PEOPLE.length}人（${PEOPLE.join("・")}）` },
     {
       label: "制約なし",
-      value: `${FREE.total} 通り中 ${FREE.counterexampleCount} 通りが反例`,
+      value: `${FREE.total}通り中${FREE.counterexampleCount}通りが反例`,
       tone: "bad",
     },
     {
       label: "制約2つ",
-      value: `${NO_CYCLE.total} 通り中 ${NO_CYCLE.counterexampleCount} 通りが反例`,
+      value: `${NO_CYCLE.total}通り中${NO_CYCLE.counterexampleCount}通りが反例`,
       tone: "ok",
     },
     { label: "実物の道具", value: "Alloy" },
@@ -122,9 +122,9 @@ export const smallScopeLesson: Lesson = {
       title: "関係を書く",
       actor: "rules",
       to: [...PEOPLE],
-      summary: `${PEOPLE.length} 人それぞれに、上司を「なし」か誰か1人で決める`,
-      explain: `登場するのは ${PEOPLE.join("・")} の ${PEOPLE.length} 人。各人の上司は「なし」か ${PEOPLE.length} 人のうち誰か1人なので、選び方は ${PEOPLE.length + 1} 通り。3 人分を組み合わせると、あり得る形は全部で ${FREE.total} 通りになる。`,
-      set: { rules: { rows: { 形の数: `${FREE.total} 通り` } } },
+      summary: `${PEOPLE.length}人それぞれに、上司を「なし」か誰か1人で決める`,
+      explain: `登場するのは${PEOPLE.join("・")}の${PEOPLE.length}人。各人の上司は「なし」か${PEOPLE.length}人のうち誰か1人なので、選び方は${PEOPLE.length + 1}通り。3人分を組み合わせると、あり得る形は全部で${FREE.total}通りになる。`,
+      set: { rules: { rows: { 形の数: `${FREE.total}通り` } } },
     },
     {
       id: "write-property",
@@ -145,12 +145,12 @@ export const smallScopeLesson: Lesson = {
       title: "制約なしで全部作る",
       actor: "analyzer",
       to: [...PEOPLE],
-      summary: `${FREE.total} 通りを全部作り、${FREE.counterexampleCount} 通りで性質が破れる`,
-      explain: `アナライザは、制約を満たす形を範囲内で全部作り、1つずつ性質を当てる。制約なしの ${FREE.total} 通りのうち ${FREE.counterexampleCount} 通りで、誰かが自分の上司筋になった。Alloy は「多くの不具合は小さな例で見つかる」という小さな範囲仮説（small scope hypothesis）に立ち、人数を少なく区切る代わりに、その中は漏れなく調べる。`,
+      summary: `${FREE.total}通りを全部作り、${FREE.counterexampleCount}通りで性質が破れる`,
+      explain: `アナライザは、制約を満たす形を範囲内で全部作り、1つずつ性質を当てる。制約なしの${FREE.total}通りのうち${FREE.counterexampleCount}通りで、誰かが自分の上司筋になった。Alloy は「多くの不具合は小さな例で見つかる」という小さな範囲仮説（small scope hypothesis）に立ち、人数を少なく区切る代わりに、その中は漏れなく調べる。`,
       set: {
         analyzer: {
           tone: "wait",
-          rows: { 形: `${FREE.total} 通り`, 反例: `${FREE.counterexampleCount} 通り` },
+          rows: { 形: `${FREE.total}通り`, 反例: `${FREE.counterexampleCount}通り` },
         },
       },
     },
@@ -173,16 +173,16 @@ export const smallScopeLesson: Lesson = {
       title: "自分を上司にしない",
       actor: "rules",
       to: ["analyzer"],
-      summary: `制約を足すと ${NO_SELF.total} 通りに減るが、まだ ${NO_SELF.counterexampleCount} 通りが反例`,
-      explain: `「自分を自分の上司にしない」を制約に足して、もう一度全部作る。形は ${NO_SELF.total} 通りに減ったが、まだ ${NO_SELF.counterexampleCount} 通りで性質が破れている。`,
+      summary: `制約を足すと${NO_SELF.total}通りに減るが、まだ${NO_SELF.counterexampleCount}通りが反例`,
+      explain: `「自分を自分の上司にしない」を制約に足して、もう一度全部作る。形は${NO_SELF.total}通りに減ったが、まだ${NO_SELF.counterexampleCount}通りで性質が破れている。`,
       set: {
         ...IDLE_PEOPLE,
-        rules: { rows: { 自分を上司: "禁止", 形の数: `${NO_SELF.total} 通り` } },
+        rules: { rows: { 自分を上司: "禁止", 形の数: `${NO_SELF.total}通り` } },
         analyzer: {
           tone: "wait",
           rows: {
-            形: `${NO_SELF.total} 通り`,
-            反例: `${NO_SELF.counterexampleCount} 通り`,
+            形: `${NO_SELF.total}通り`,
+            反例: `${NO_SELF.counterexampleCount}通り`,
           },
         },
       },
@@ -206,26 +206,26 @@ export const smallScopeLesson: Lesson = {
       title: "輪を作らない",
       actor: "rules",
       to: ["analyzer"],
-      summary: `「輪を作らない」を足すと ${NO_CYCLE.total} 通りすべてで性質が成り立つ`,
-      explain: `「上司をたどって自分に戻る輪を作らない」を制約に足す。形は ${NO_CYCLE.total} 通りになり、反例は ${NO_CYCLE.counterexampleCount} 通り。3 人の範囲では、どの形でも誰も自分の上司筋にならないと確かめられた。`,
+      summary: `「輪を作らない」を足すと${NO_CYCLE.total}通りすべてで性質が成り立つ`,
+      explain: `「上司をたどって自分に戻る輪を作らない」を制約に足す。形は${NO_CYCLE.total}通りになり、反例は${NO_CYCLE.counterexampleCount}通り。3人の範囲では、どの形でも誰も自分の上司筋にならないと確かめられた。`,
       set: {
         ...IDLE_PEOPLE,
-        rules: { tone: "ok", rows: { 輪: "禁止", 形の数: `${NO_CYCLE.total} 通り` } },
+        rules: { tone: "ok", rows: { 輪: "禁止", 形の数: `${NO_CYCLE.total}通り` } },
         analyzer: {
           tone: "ok",
           rows: {
-            形: `${NO_CYCLE.total} 通り`,
-            反例: `${NO_CYCLE.counterexampleCount} 通り`,
+            形: `${NO_CYCLE.total}通り`,
+            反例: `${NO_CYCLE.counterexampleCount}通り`,
           },
         },
       },
       simplified:
-        "Alloy は関係を論理式で書き、範囲内の形を SAT ソルバ（論理式を満たす値の組を探す道具）で探す。ここでは 3 人の形を TypeScript で全部列挙して1つずつ調べている。どちらも範囲の外（4 人以上）は確かめていない。",
+        "Alloy は関係を論理式で書き、範囲内の形を SAT ソルバ（論理式を満たす値の組を探す道具）で探す。ここでは3人の形を TypeScript で全部列挙して1つずつ調べている。どちらも範囲の外（4人以上）は確かめていない。",
     },
   ],
   lab: {
     title: "制約を付け外しする",
-    hint: "2つの制約を「あり」「なし」で切り替える。「輪を作らない」は自分1人の輪も含むので、それだけでも反例は 0 になる。",
+    hint: "2つの制約を「あり」「なし」で切り替える。「輪を作らない」は自分1人の輪も含むので、それだけでも反例は0になる。",
     inputs: [
       { id: "self", label: "自分を上司にしない（あり / なし）", initial: "なし" },
       { id: "cycle", label: "輪を作らない（あり / なし）", initial: "なし" },
@@ -235,10 +235,10 @@ export const smallScopeLesson: Lesson = {
       const forbidCycle = parseOn(values.cycle);
       const result = checkBossInstances({ forbidSelf, forbidCycle });
       return [
-        { label: "制約を満たす形", value: `${result.total} 通り` },
+        { label: "制約を満たす形", value: `${result.total}通り` },
         {
           label: "反例の数",
-          value: `${result.counterexampleCount} 通り`,
+          value: `${result.counterexampleCount}通り`,
           tone: result.counterexampleCount > 0 ? "bad" : "ok",
         },
         {

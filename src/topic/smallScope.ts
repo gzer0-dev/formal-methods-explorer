@@ -1,4 +1,4 @@
-// Alloy の考え方（小さな範囲で、あり得る形を全部作って反例を探す）を、3 人の「上司」の関係で再現する。
+// Alloy の考え方（小さな範囲で、あり得る形を全部作って反例を探す）を、3人の「上司」の関係で再現する。
 
 export const PEOPLE = ["A", "B", "C"] as const;
 export type Person = (typeof PEOPLE)[number];
@@ -21,7 +21,7 @@ export interface BossCheck {
   firstCounterexample: BossInstance | null;
 }
 
-/** 上司をたどって自分に戻るか。3 人なら 3 回たどれば十分。 */
+/** 上司をたどって自分に戻るか。3人なら3回たどれば十分。 */
 export function isOwnAncestor(instance: BossInstance, person: Person): boolean {
   let cursor = instance[person];
   for (let i = 0; i < PEOPLE.length && cursor !== null; i += 1) {
