@@ -125,6 +125,9 @@ function lessonProblems(
   for (const key of ["title", "subtitle", "summary"] as const) {
     if (isBlank(lesson[key])) problems.push(`${where}: ${key} が空`);
   }
+  (lesson.intro ?? []).forEach((paragraph, index) => {
+    if (isBlank(paragraph)) problems.push(`${where}: 概要の ${index + 1} 段落目が空`);
+  });
   if (!topic.categories.some((category) => category.id === lesson.category)) {
     problems.push(`${where}: カテゴリ "${lesson.category}" が無い`);
   }

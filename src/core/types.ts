@@ -91,6 +91,11 @@ export interface Lesson {
   title: string;
   subtitle: string;
   summary: string;
+  /**
+   * 図を見る前に読む概要（段落ごと）。何の話か・なぜ大事か・図のどこを見るかを書く。
+   * summary と facts は「見た後に分かること（結果）」で、こちらは「見る前の前提と見どころ」。省略すると出さない。
+   */
+  intro?: string[];
   facts: Field[];
   actors: Actor[];
   /** 図の高さ（幅 960 に対する値）。登場物が横 1 列なら 300 前後、2 段以上なら既定の 520。 */

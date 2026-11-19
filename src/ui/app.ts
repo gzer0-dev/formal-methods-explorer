@@ -11,17 +11,29 @@ import {
   type PlayerState,
 } from "../core/player";
 import { statesAt } from "../core/timeline";
+import { LANGUAGES, type Language } from "../core/i18n";
 import type { Lesson, Step, Topic } from "../core/types";
 import { el } from "./dom";
 import { createFieldList, createSections } from "./fields";
 import { createIcon } from "./icons";
 import { createSequence } from "./sequence";
 import { createStage, type StageView } from "./stage";
+import { UI_TEXT } from "./uiText";
 
 export interface AppOptions {
   initialLessonId?: string;
   /** 開いてすぐ最初のレッスンを再生する（最初の数秒で「動く図」だと伝えるため）。 */
   shouldAutoplay?: boolean;
+  /** 開いたときのステップ（言語を切り替えて作り直すとき、いまの位置を引き継ぐ）。 */
+  initialCursor?: number;
+  /** 画面の固定文言の言語。題材の文言は Topic の側で決まる。 */
+  language?: Language;
+  /** 2つ以上あると、ヘッダーに切り替えのボタンを出す。押すと onSwitchLanguage が呼ばれる。 */
+  languages?: Language[];
+  onSwitchLanguage?: (
+    language: Language,
+    position: { lessonId: string; cursor: number },
+  ) => void;
 }
 
 export interface App {
@@ -33,11 +45,6 @@ type ViewMode = "diagram" | "sequence";
 const AUTOPLAY_DELAY_MS = 900;
 // 流れる点が相手に着いてから次のステップまで、読む時間を残す。
 const TRAVEL_SHARE_OF_INTERVAL = 0.45;
-
-const READY_CAPTION = {
-  title: "まだ何も起きていない",
-  explain: "「再生」で通して見るか、「次へ」で1つずつ進めよう。",
-};
 
 function prefersReducedMotion(): boolean {
   return (
@@ -73,7 +80,14 @@ export function mountApp(
     id: lesson.id,
     stepCount: lesson.steps.length,
   }));
+  const text = UI_TEXT[options.language ?? "ja"];
   let player: PlayerState = initialPlayer(outlines, options.initialLessonId);
+  if (options.initialCursor !== undefined) {
+    player = reducePlayer(outlines, player, {
+      type: "seek",
+      cursor: options.initialCursor,
+    });
+  }
   let viewMode: ViewMode = "diagram";
   let tickTimer: number | undefined;
   let renderedLessonId: string | null = null;
@@ -89,7 +103,7 @@ export function mountApp(
   const lessonButtons = new Map<string, HTMLButtonElement>();
   const lessonNav = el("nav", {
     class: "lessons",
-    attrs: { "aria-label": "レッスン" },
+    attrs: { "aria-label": text.lessonsNav },
   });
   let lessonNumber = 0;
   for (const category of topic.categories) {
@@ -130,17 +144,47 @@ export function mountApp(
       ]),
     ]),
   ]);
+  const otherLanguage = (options.languages ?? []).find(
+    (language) => language !== (options.language ?? "ja"),
+  );
+  if (otherLanguage && options.onSwitchLanguage) {
+    const onSwitchLanguage = options.onSwitchLanguage;
+    // 押した先の言語の名前を、その言語の書き方で出す（読めない言語のボタンを探させないため）。
+    const languageButton = el("button", {
+      class: "language-switch",
+      text: UI_TEXT[otherLanguage].languageName,
+      attrs: {
+        type: "button",
+        "data-action": "switchLanguage",
+        lang: otherLanguage,
+        "aria-label": UI_TEXT[otherLanguage].switchLanguage,
+        title: UI_TEXT[otherLanguage].switchLanguage,
+      },
+    });
+    languageButton.addEventListener("click", () =>
+      onSwitchLanguage(otherLanguage, {
+        lessonId: player.lessonId,
+        cursor: player.cursor,
+      }),
+    );
+    header.append(languageButton);
+  }
 
   const lessonTitle = el("h2", { attrs: { "data-role": "lesson-title" } });
   const lessonSubtitle = el("p", { class: "lesson-subtitle" });
+  // 図を見る前に読む概要。図の上に置き、いつでも読み返せるようにする（再生しても消えない）。
+  const lessonIntro = el("div", {
+    class: "lesson-intro",
+    attrs: { "data-role": "lesson-intro" },
+  });
   const viewTabs = new Map<ViewMode, HTMLButtonElement>();
   const tabList = el("div", {
     class: "view-tabs",
-    attrs: { role: "tablist", "aria-label": "表示の切り替え" },
+    attrs: { role: "tablist", "aria-label": text.viewTabs },
   });
   for (const [mode, label] of [
-    ["diagram", "図"],
-    ["sequence", "シーケンス"],
+    ["diagram", text.diagram],
+    ["sequence", text.sequence],
   ] as const) {
     const tab = el("button", {
       text: label,
@@ -175,16 +219,17 @@ export function mountApp(
       el("div", {}, [lessonTitle, lessonSubtitle]),
       tabList,
     ]),
+    lessonIntro,
     stageHost,
     sequenceHost,
     caption,
   ]);
 
-  const speedButton = controlButton("cycleSpeed", "再生の速さ", "1×");
-  const prevButton = controlButton("prev", "前へ（←）", "前へ");
-  const toggleButton = controlButton("toggle", "再生／一時停止（スペース）", "再生");
-  const nextButton = controlButton("next", "次へ（→）", "次へ");
-  const resetButton = controlButton("reset", "最初から（R）", "最初から");
+  const speedButton = controlButton("cycleSpeed", text.speed, "1×");
+  const prevButton = controlButton("prev", text.prevHint, text.prev);
+  const toggleButton = controlButton("toggle", text.playHint, text.play);
+  const nextButton = controlButton("next", text.nextHint, text.next);
+  const resetButton = controlButton("reset", text.resetHint, text.reset);
   const stepCounter = el("span", {
     class: "step-counter",
     attrs: { "data-role": "step-counter" },
@@ -226,10 +271,10 @@ export function mountApp(
       el("table", {}, [
         el("thead", {}, [
           el("tr", {}, [
-            el("th", { text: "番号" }),
-            el("th", { text: "種類" }),
-            el("th", { text: "どこで" }),
-            el("th", { text: "起きること" }),
+            el("th", { text: text.columnNumber }),
+            el("th", { text: text.columnKind }),
+            el("th", { text: text.columnWhere }),
+            el("th", { text: text.columnWhat }),
           ]),
         ]),
         tableBody,
@@ -237,7 +282,7 @@ export function mountApp(
     ]),
     el("p", {
       class: "key-hint",
-      text: "キーボード: スペースで再生と一時停止、← → で1つずつ、R で最初から",
+      text: text.keyHint,
     }),
   ]);
 
@@ -294,7 +339,7 @@ export function mountApp(
 
   function buildOverview(lesson: Lesson): void {
     overview.replaceChildren(
-      el("h3", { text: "このレッスンで分かること" }),
+      el("h3", { text: text.overviewTitle }),
       el("p", { text: lesson.summary }),
       createFieldList(lesson.facts),
     );
@@ -315,9 +360,7 @@ export function mountApp(
         result.replaceChildren(createFieldList(lab.compute(values)));
       } catch (error) {
         console.error("実験の計算に失敗した", error);
-        result.replaceChildren(
-          el("p", { text: "計算できなかった。入力を確かめよう。" }),
-        );
+        result.replaceChildren(el("p", { text: text.labError }));
       }
     };
     const inputs = lab.inputs.map((input) => {
@@ -354,6 +397,9 @@ export function mountApp(
     stageHost.replaceChildren(stage.element);
     lessonTitle.textContent = lesson.title;
     lessonSubtitle.textContent = lesson.subtitle;
+    const introParagraphs = lesson.intro ?? [];
+    lessonIntro.hidden = introParagraphs.length === 0;
+    lessonIntro.replaceChildren(...introParagraphs.map((text) => el("p", { text })));
     buildTable(lesson);
     buildOverview(lesson);
     buildLab(lesson);
@@ -372,11 +418,14 @@ export function mountApp(
     captionKind.hidden = kind === null;
     captionKind.textContent = kind?.label ?? "";
     captionKind.style.setProperty("--kind-color", kind?.color ?? "currentColor");
-    captionTitle.textContent = step?.title ?? READY_CAPTION.title;
-    captionExplain.textContent = step?.explain ?? READY_CAPTION.explain;
+    // 再生する前は説明の欄に何も出さない。「まだ何も起きていない」のような案内は、図とボタンを見れば分かるので置かない。
+    // 欄ごと消すと、再生を押した瞬間に下の一覧とボタンが押し下げられて次の操作がずれるので、場所は残して見えなくする。
+    caption.classList.toggle("is-empty", step === null);
+    captionTitle.textContent = step?.title ?? "";
+    captionExplain.textContent = step?.explain ?? "";
     captionSimplified.hidden = !step?.simplified;
     captionSimplified.textContent = step?.simplified
-      ? `簡略化: ${step.simplified}`
+      ? `${text.simplified}: ${step.simplified}`
       : "";
   }
 
@@ -384,7 +433,7 @@ export function mountApp(
     const sections = step?.detail ?? [];
     stepDetail.hidden = sections.length === 0;
     stepDetail.replaceChildren(
-      el("h3", { text: "このステップの中身" }),
+      el("h3", { text: text.stepDetailTitle }),
       ...createSections(sections),
     );
   }
@@ -393,7 +442,7 @@ export function mountApp(
     const lastCursor = lesson.steps.length - 1;
     stepCounter.textContent = `${player.cursor + 1} / ${lesson.steps.length}`;
     speedButton.textContent = `${player.speed}×`;
-    toggleButton.textContent = player.isPlaying ? "一時停止" : "再生";
+    toggleButton.textContent = player.isPlaying ? text.pause : text.play;
     toggleButton.setAttribute("aria-pressed", String(player.isPlaying));
     // 何も起きていないときは「再生」を目立たせて、最初の一手を画面で教える。
     toggleButton.classList.toggle(
@@ -445,8 +494,12 @@ export function mountApp(
       travelMs,
     });
     sequenceHost.replaceChildren(
-      createSequence(topic, lesson, player.cursor, (cursor) =>
-        dispatch({ type: "seek", cursor }),
+      createSequence(
+        topic,
+        lesson,
+        player.cursor,
+        (cursor) => dispatch({ type: "seek", cursor }),
+        text.sequenceLabel,
       ),
     );
     scrollSequenceToCurrentStep();
@@ -513,7 +566,13 @@ export function mountApp(
   let autoplayTimer: number | undefined;
   if (options.shouldAutoplay && !prefersReducedMotion()) {
     autoplayTimer = window.setTimeout(() => {
-      if (player.cursor === -1 && !player.isPlaying) dispatch({ type: "play" });
+      // 図が画面の下に隠れているとき（スマホ幅で上の概要を読んでいるとき）は始めない。
+      // 見えない所で再生が進み、図まで降りたときには最後まで終わっている、を避けるため。
+      const isStageInView =
+        stageHost.getBoundingClientRect().top < window.innerHeight * 0.7;
+      if (player.cursor === -1 && !player.isPlaying && isStageInView) {
+        dispatch({ type: "play" });
+      }
     }, AUTOPLAY_DELAY_MS);
   }
 
@@ -524,6 +583,99 @@ export function mountApp(
       document.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("hashchange", onHashChange);
       stage?.destroy();
+    },
+  };
+}
+
+export interface LocalizedAppOptions {
+  /** 選んだ言語を覚えておく先。既定は localStorage（使えない環境では覚えないだけで動く）。 */
+  storage?: KeyValueStore;
+  shouldAutoplay?: boolean;
+}
+
+/** Map と同じ形。テストではメモリの Map を渡す。 */
+interface KeyValueStore {
+  get(key: string): string | null | undefined;
+  set(key: string, value: string): unknown;
+}
+
+const LANGUAGE_KEY = "explainer-language";
+
+function isLanguage(value: unknown): value is Language {
+  return typeof value === "string" && (LANGUAGES as readonly string[]).includes(value);
+}
+
+function browserStorage(): KeyValueStore {
+  return {
+    get(key) {
+      try {
+        return window.localStorage.getItem(key);
+      } catch (error) {
+        console.warn("選んだ言語を読めなかった", error);
+        return null;
+      }
+    },
+    set(key, value) {
+      try {
+        window.localStorage.setItem(key, value);
+      } catch (error) {
+        console.warn("選んだ言語を覚えられなかった", error);
+      }
+    },
+  };
+}
+
+/**
+ * 言語ごとの題材を受け取り、切り替えのボタン付きで画面を出す。
+ * 始める言語は URL の ?lang= → 前に選んだ言語 → 最初に渡した言語の順に決める。
+ * 切り替えるときは画面を作り直す（文言が画面のあちこちに焼き込まれているため）。いまのレッスンとステップは引き継ぐ。
+ */
+export function mountLocalizedApp(
+  root: HTMLElement,
+  topics: Partial<Record<Language, Topic>>,
+  options: LocalizedAppOptions = {},
+): App {
+  const languages = LANGUAGES.filter((language) => topics[language] !== undefined);
+  if (languages.length === 0) throw new Error("題材が1つも渡されていない");
+  const storage = options.storage ?? browserStorage();
+  const requested = new URLSearchParams(location.search).get("lang");
+  const stored = storage.get(LANGUAGE_KEY);
+  let language: Language =
+    [requested, stored].find(
+      (candidate): candidate is Language =>
+        isLanguage(candidate) && languages.includes(candidate),
+    ) ?? languages[0];
+
+  let app: App;
+  function mount(
+    position: { lessonId?: string; cursor?: number },
+    shouldAutoplay: boolean,
+  ) {
+    document.documentElement.lang = language;
+    app = mountApp(root, topics[language]!, {
+      initialLessonId: position.lessonId,
+      initialCursor: position.cursor,
+      shouldAutoplay,
+      language,
+      languages,
+      onSwitchLanguage(next, current) {
+        app.destroy();
+        language = next;
+        storage.set(LANGUAGE_KEY, next);
+        const url = new URL(location.href);
+        url.searchParams.set("lang", next);
+        history.replaceState(null, "", url);
+        mount(current, false);
+      },
+    });
+  }
+  mount(
+    { lessonId: location.hash.slice(1) || undefined },
+    options.shouldAutoplay ?? false,
+  );
+  return {
+    destroy() {
+      app.destroy();
     },
   };
 }

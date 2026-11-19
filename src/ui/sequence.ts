@@ -29,6 +29,7 @@ export function createSequence(
   lesson: Lesson,
   cursor: number,
   onSeek: (stepIndex: number) => void,
+  label = "シーケンス図",
 ): SVGSVGElement {
   const width = COLUMN_WIDTH * lesson.actors.length;
   const height = HEADER_HEIGHT + ROW_HEIGHT * lesson.steps.length + 16;
@@ -38,7 +39,7 @@ export function createSequence(
     width,
     height,
     role: "group",
-    "aria-label": "シーケンス図",
+    "aria-label": label,
   });
 
   const columnX = new Map<string, number>();

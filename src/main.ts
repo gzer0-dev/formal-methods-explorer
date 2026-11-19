@@ -3,13 +3,10 @@
 import "./ui/base.css";
 import "./topic/theme.css";
 
-import { topic } from "./topic";
-import { mountApp } from "./ui/app";
+import { topics } from "./topic";
+import { mountLocalizedApp } from "./ui/app";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("index.html に #app が無い");
 
-mountApp(root, topic, {
-  initialLessonId: location.hash.slice(1) || undefined,
-  shouldAutoplay: true,
-});
+mountLocalizedApp(root, topics, { shouldAutoplay: true });

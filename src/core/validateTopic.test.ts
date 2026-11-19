@@ -90,6 +90,12 @@ describe("validateTopic", () => {
     ).toContain('カテゴリ "empty" にレッスンが無い');
   });
 
+  it("概要に空の段落がある", () => {
+    expect(problemsAfter((t) => (t.lessons[0].intro = ["何の話か", " "]))).toContain(
+      'レッスン "l1": 概要の 2 段落目が空',
+    );
+  });
+
   it("ステップが 1 つも無い", () => {
     expect(problemsAfter((t) => (t.lessons[0].steps = []))).toContain(
       "ステップが 1 つも無い",

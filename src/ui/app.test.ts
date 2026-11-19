@@ -6,8 +6,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fixtureTopic } from "../core/fixtureTopic";
+import type { Language } from "../core/i18n";
 import { stepIntervalMs } from "../core/player";
-import { mountApp } from "./app";
+import { mountApp, mountLocalizedApp } from "./app";
 
 function setup(lessonId?: string) {
   const root = document.createElement("div");
@@ -43,9 +44,49 @@ describe("最初の表示", () => {
     expect(q("[data-lesson-id=order]").getAttribute("aria-current")).toBe("true");
   });
 
+  it("再生する前は説明の欄に何も出さず見えなくする（見れば分かる案内の文は置かない）", () => {
+    const { q, click } = setup();
+    expect(q(".caption").classList.contains("is-empty")).toBe(true);
+    expect(q("[data-role=caption-title]").textContent).toBe("");
+    expect(q("[data-role=caption-explain]").textContent).toBe("");
+    click("[data-action=next]");
+    expect(q(".caption").classList.contains("is-empty")).toBe(false);
+    expect(q("[data-role=caption-title]").textContent).not.toBe("");
+  });
+
+  it("説明の欄は消しても場所は残す（押した直後にボタンの位置がずれないように）", () => {
+    const { q } = setup();
+    expect(q<HTMLElement>(".caption").hidden).toBe(false);
+  });
+
+  it("最初からに戻すと、説明の欄はまた空になる", () => {
+    const { q, click } = setup();
+    click("[data-action=next]");
+    click("[data-action=reset]");
+    expect(q(".caption").classList.contains("is-empty")).toBe(true);
+  });
+
   it("まだ現れていない登場物は隠れている", () => {
     const { q } = setup();
     expect(q("[data-actor-id=slip]").classList.contains("is-hidden")).toBe(true);
+  });
+});
+
+describe("レッスンの概要", () => {
+  it("概要のあるレッスンでは、図の上に段落ごとに出す", () => {
+    const { q } = setup();
+    const intro = q<HTMLElement>("[data-role=lesson-intro]");
+    expect(intro.hidden).toBe(false);
+    expect([...intro.querySelectorAll("p")].map((p) => p.textContent)).toEqual([
+      "注文は、客から店へ届いて初めて処理が始まる。",
+      "図では、注文が客から店へ流れ、店の中で伝票が現れるところを見る。",
+    ]);
+  });
+
+  it("概要の無いレッスンに切り替えると、概要の欄は出さない", () => {
+    const { q, click } = setup();
+    click("[data-lesson-id=refund]");
+    expect(q<HTMLElement>("[data-role=lesson-intro]").hidden).toBe(true);
   });
 });
 
@@ -297,5 +338,111 @@ describe("後片づけ", () => {
     app.destroy();
     press("ArrowRight");
     expect(text("[data-role=step-counter]")).toBe("0 / 3");
+  });
+});
+
+describe("言語の切り替え", () => {
+  function setupLocalized(languages: Language[] = ["ja", "en"]) {
+    const root = document.createElement("div");
+    document.body.append(root);
+    const topics = Object.fromEntries(
+      languages.map((language) => [language, fixtureTopic(language)]),
+    );
+    const app = mountLocalizedApp(root, topics, { storage });
+    const q = <T extends Element>(selector: string): T => {
+      const found = root.querySelector<T>(selector);
+      if (!found) throw new Error(`画面に ${selector} が無い`);
+      return found;
+    };
+    return { root, app, q };
+  }
+
+  // テストの jsdom には localStorage が無いので、覚えておく先をメモリで渡す。
+  let storage: Map<string, string>;
+  beforeEach(() => {
+    storage = new Map();
+    history.replaceState(null, "", location.pathname);
+    document.documentElement.lang = "ja";
+  });
+
+  it("言語が1つだけなら切り替えのボタンを出さない", () => {
+    const { root } = setupLocalized(["ja"]);
+    expect(root.querySelector("[data-action=switchLanguage]")).toBeNull();
+  });
+
+  it("押すと英語になり、いまのレッスンとステップはそのまま残る", () => {
+    const { q } = setupLocalized();
+    q<HTMLElement>("[data-lesson-id=order]").click();
+    q<HTMLElement>("[data-action=next]").click();
+    expect(q("[data-action=switchLanguage]").textContent).toBe("English");
+    q<HTMLElement>("[data-action=switchLanguage]").click();
+    expect(q("[data-role=lesson-title]").textContent).toBe("Until the order arrives");
+    expect(q("[data-role=step-counter]").textContent).toBe("1 / 3");
+    expect(q("[data-action=toggle]").textContent).toBe("Play");
+    expect(q("[data-action=switchLanguage]").textContent).toBe("日本語");
+    expect(document.documentElement.lang).toBe("en");
+    expect(document.title).toBe("Until the order arrives | Sample topic");
+  });
+
+  it("選んだ言語を覚えていて、次に開いたときもその言語で出す", () => {
+    const first = setupLocalized();
+    first.q<HTMLElement>("[data-action=switchLanguage]").click();
+    first.app.destroy();
+    document.body.replaceChildren();
+    const { q } = setupLocalized();
+    expect(q("[data-role=lesson-title]").textContent).toBe("Until the order arrives");
+  });
+
+  it("URL の ?lang=en で英語から始められる（英語のページからのリンク用）", () => {
+    history.replaceState(null, "", "?lang=en");
+    const { q } = setupLocalized();
+    expect(q("[data-role=lesson-title]").textContent).toBe("Until the order arrives");
+  });
+
+  it("切り替えた後もボタンとキー操作が効く（作り直した画面の配線が生きている）", () => {
+    const { q } = setupLocalized();
+    q<HTMLElement>("[data-action=switchLanguage]").click();
+    document.dispatchEvent(
+      new KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }),
+    );
+    expect(q("[data-role=step-counter]").textContent).toBe("1 / 3");
+    q<HTMLElement>("[data-action=switchLanguage]").click();
+    expect(q("[data-role=lesson-title]").textContent).toBe("注文が届くまで");
+  });
+});
+
+describe("開いてすぐの自動再生", () => {
+  function mountWithAutoplay(stageTop: number) {
+    const root = document.createElement("div");
+    document.body.append(root);
+    vi.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockImplementation(
+      function (this: HTMLElement) {
+        const top = this.classList.contains("stage-host") ? stageTop : 0;
+        return {
+          top,
+          bottom: top + 300,
+          left: 0,
+          right: 0,
+          width: 0,
+          height: 300,
+          x: 0,
+          y: top,
+          toJSON: () => ({}),
+        };
+      },
+    );
+    mountApp(root, fixtureTopic(), { shouldAutoplay: true });
+    vi.advanceTimersByTime(1000);
+    return root.querySelector("[data-action=toggle]")?.textContent;
+  }
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it("図が画面に見えていれば、少し待ってから再生を始める", () => {
+    expect(mountWithAutoplay(200)).toBe("一時停止");
+  });
+
+  it("図が画面の下に隠れているとき（スマホ幅で概要を読んでいるとき）は再生しない", () => {
+    expect(mountWithAutoplay(window.innerHeight + 100)).toBe("再生");
   });
 });

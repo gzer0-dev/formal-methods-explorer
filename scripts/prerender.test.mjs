@@ -11,6 +11,7 @@ const topic = {
       title: "1本目",
       subtitle: "副題",
       summary: '要約 "引用"',
+      intro: ["概要の1段落目", "概要の2段落目"],
       steps: [
         { title: "手1", summary: "一覧の1行", explain: "説明 <b>太字ではない</b>" },
       ],
@@ -28,6 +29,8 @@ describe("renderStaticTopic", () => {
     expect(html).toContain("要約 &quot;引用&quot;");
     expect(html).toContain("説明 &lt;b&gt;太字ではない&lt;/b&gt;");
     expect(html).not.toContain("<b>");
+    expect(html).toContain('<p class="static-intro">概要の1段落目</p>');
+    expect(html).toContain('<p class="static-intro">概要の2段落目</p>');
   });
 });
 

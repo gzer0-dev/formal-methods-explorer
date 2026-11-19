@@ -1,5 +1,6 @@
 // 題材の定義。レッスンの並びは、学ぶ順（なぜ → モデル検査 → 仕様と証明 → テストへつなぐ）にしてある。
 
+import type { Language } from "../core/i18n";
 import type { Topic } from "../core/types";
 import { TOPIC_ICONS } from "./icons";
 import { bfsLesson } from "./lessons/bfs";
@@ -90,3 +91,6 @@ export const topic: Topic = {
   ],
   icons: TOPIC_ICONS,
 };
+
+/** 言語ごとの題材。英語は全レッスンの訳し忘れが 0 件になるまで載せない（載せると切り替えのボタンが出る）。 */
+export const topics: Partial<Record<Language, Topic>> = { ja: topic };

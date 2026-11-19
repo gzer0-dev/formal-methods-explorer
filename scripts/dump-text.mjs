@@ -14,7 +14,13 @@ const OUT_FILE = "docs/lesson-text.txt";
 export function topicLines(topic) {
   const lines = [topic.title, topic.tagline];
   for (const lesson of topic.lessons) {
-    lines.push("", `## ${lesson.title}`, lesson.subtitle, lesson.summary);
+    lines.push(
+      "",
+      `## ${lesson.title}`,
+      lesson.subtitle,
+      lesson.summary,
+      ...(lesson.intro ?? []),
+    );
     for (const fact of lesson.facts) lines.push(`${fact.label}: ${fact.value}`);
     for (const step of lesson.steps) {
       lines.push("", `### ${step.title}`, step.summary, step.explain);

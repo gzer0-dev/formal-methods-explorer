@@ -74,6 +74,27 @@ input:focus-visible,
 
 .app-header {
   grid-area: header;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* 言語の切り替え。題の横の右端に置き、スマホ幅でも題を押し出さないよう縮めない。 */
+.language-switch {
+  flex: none;
+  min-height: 36px;
+  padding: 4px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: var(--card);
+  color: var(--ink);
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.language-switch:hover {
+  border-color: var(--accent);
 }
 
 .lessons {
@@ -229,6 +250,23 @@ input:focus-visible,
 .lesson-subtitle {
   color: var(--ink-soft);
   font-size: 13px;
+}
+
+.lesson-intro {
+  margin: 0 16px 12px;
+  padding: 10px 14px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.lesson-intro p {
+  margin: 0;
+}
+
+.lesson-intro p + p {
+  margin-top: 6px;
 }
 
 .view-tabs {
@@ -504,6 +542,10 @@ input:focus-visible,
 .caption {
   min-height: 108px;
   padding: 12px 16px 14px;
+}
+
+.caption.is-empty {
+  visibility: hidden;
 }
 
 .caption-head {

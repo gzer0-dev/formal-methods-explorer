@@ -48,6 +48,11 @@ export const smallScopeLesson: Lesson = {
   title: "小さな範囲で全部調べる",
   subtitle: "3人の「上司」の関係を全部作る",
   summary: `3人の「上司」の関係を、あり得る形をすべて作って調べる。制約なしでは${FREE.total}通り中${FREE.counterexampleCount}通り、「自分を上司にしない」を足すと${NO_SELF.total}通り中${NO_SELF.counterexampleCount}通りが反例。「輪を作らない」まで足すと${NO_CYCLE.total}通りで反例${NO_CYCLE.counterexampleCount}。`,
+  intro: [
+    "小さな範囲で全部調べるとは、登場する人や物の数を少なく区切り、その中であり得る形を漏らさず作って確かめるやり方である。Alloy という道具がこの考え方で動く。",
+    "データどうしの関係（ここでは誰が誰の上司か）は、テストデータを手で作ると、思いついた形しか試せない。前のレッスンがひとつの関数の入力を総当たりしたのに対し、ここでは関係の形そのものを総当たりする。",
+    "図では、A さん・B さん・C さんのカードと、制約のカードを見る。アナライザが反例を見つけるたびに制約が足され、次にどんな形の反例が残るかが分かれ目になる。",
+  ],
   facts: [
     { label: "人数", value: `${PEOPLE.length}人（${PEOPLE.join("・")}）` },
     {

@@ -33,6 +33,9 @@ export function renderStaticTopic(topic) {
       `<h2>${escapeHtml(lesson.title)}</h2>`,
       `<p>${escapeHtml(lesson.subtitle)}</p>`,
       `<p>${escapeHtml(lesson.summary)}</p>`,
+      ...(lesson.intro ?? []).map(
+        (paragraph) => `<p class="static-intro">${escapeHtml(paragraph)}</p>`,
+      ),
       "<ol>",
       ...lesson.steps.map(
         (step) =>

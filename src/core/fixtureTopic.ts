@@ -1,12 +1,15 @@
 // テスト用の小さな題材。画面のテスト（src/ui）は題材の層を import できないので、ここに置く。
 // 途中で現れる登場物・複数の送り先・実験・簡略化の注記を 1 つずつ含めてある。
 
+import { translator, type Language } from "./i18n";
 import type { Topic } from "./types";
 
-export function fixtureTopic(): Topic {
+/** 言語を渡すと、題と最初のレッスンの題だけ英語になる（言語の切り替えのテスト用。全部は訳していない）。 */
+export function fixtureTopic(language: Language = "ja"): Topic {
+  const t = translator(language);
   return {
     id: "fixture",
-    title: "見本の題材",
+    title: t("見本の題材", "Sample topic"),
     tagline: "テスト用",
     brandIcon: "person",
     timelineTitle: "処理の流れ",
@@ -22,9 +25,13 @@ export function fixtureTopic(): Topic {
       {
         id: "order",
         category: "basic",
-        title: "注文が届くまで",
+        title: t("注文が届くまで", "Until the order arrives"),
         subtitle: "客から店へ",
         summary: "客が店に注文し、店が伝票を作る。",
+        intro: [
+          "注文は、客から店へ届いて初めて処理が始まる。",
+          "図では、注文が客から店へ流れ、店の中で伝票が現れるところを見る。",
+        ],
         facts: [{ label: "登場物", value: "3" }],
         stageHeight: 300,
         actors: [
