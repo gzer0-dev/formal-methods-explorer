@@ -109,6 +109,9 @@ input:focus-visible,
 .main {
   grid-area: main;
   display: grid;
+  /* 既定の auto の列だと、図の最小幅（縮めすぎないための幅）に合わせて列が広がり、右の欄に重なる（幅 1200px 前後で起きた）。
+     列を枠の幅に固定し、収まらない図は .stage-host の横スクロールで見せる。 */
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   min-width: 0;
 }
