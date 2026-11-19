@@ -96,6 +96,26 @@ function visibilityProblems(where: string, lesson: Lesson): string[] {
   return problems;
 }
 
+// カードに4行より多く積むと、図の高さを超えて隣のカードや図の外にはみ出す。
+// 前のステップの行は消すまで残るので、ステップごとの set ではなく、その時点の状態で数える。
+const MAX_CARD_ROWS = 4;
+
+function rowCountProblems(where: string, lesson: Lesson): string[] {
+  const problems = new Set<string>();
+  for (let cursor = -1; cursor < lesson.steps.length; cursor += 1) {
+    const states = statesAt(lesson, cursor);
+    for (const [actorId, state] of Object.entries(states)) {
+      if (Object.keys(state.rows).length > MAX_CARD_ROWS) {
+        const at = cursor < 0 ? "最初" : `ステップ "${lesson.steps[cursor]!.id}"`;
+        problems.add(
+          `${where} > ${at}: "${actorId}" のカードの行が${MAX_CARD_ROWS}行を超えている（${Object.keys(state.rows).length}行。前の行は null で消す）`,
+        );
+      }
+    }
+  }
+  return [...problems];
+}
+
 function labProblems(where: string, lesson: Lesson): string[] {
   const lab = lesson.lab;
   if (!lab) return [];
@@ -173,6 +193,7 @@ function lessonProblems(
     );
   }
   problems.push(...visibilityProblems(where, lesson));
+  problems.push(...rowCountProblems(where, lesson));
   problems.push(...labProblems(where, lesson));
   return problems;
 }

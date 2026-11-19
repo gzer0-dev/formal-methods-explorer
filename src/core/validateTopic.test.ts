@@ -189,6 +189,19 @@ describe("validateTopic", () => {
     );
   });
 
+  it("どこかのステップでカードの行が4行を超える（前のステップの行が残って積み重なる場合も）", () => {
+    expect(
+      problemsAfter((t) => {
+        t.lessons[0].steps[0].set = {
+          [t.lessons[0].actors[0].id]: { rows: { a: "1", b: "2", c: "3" } },
+        };
+        t.lessons[0].steps[1].set = {
+          [t.lessons[0].actors[0].id]: { rows: { d: "4", e: "5" } },
+        };
+      }),
+    ).toContain("行が4行を超えている");
+  });
+
   it("説明が空のステップがある", () => {
     expect(problemsAfter((t) => (t.lessons[0].steps[0].explain = " "))).toContain(
       "explain が空",
