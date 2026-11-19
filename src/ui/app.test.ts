@@ -332,6 +332,69 @@ describe("実験", () => {
   });
 });
 
+describe("入力に合わせて図を作り直す実験", () => {
+  const type = (input: HTMLInputElement, value: string) => {
+    input.value = value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  };
+  const shopRows = (root: HTMLElement) =>
+    root.querySelector('[data-actor-id="shop"] .actor-rows')?.textContent ?? "";
+
+  it("入力を変えて少し待つと、図を新しい値で組み直し、最初のステップに戻る", () => {
+    const { root, q, click, text } = setup();
+    click("[data-action=next]");
+    expect(shopRows(root)).toContain("りんご 2");
+    type(q<HTMLInputElement>("[data-role=lab] input"), "5");
+    // 打っている途中で図が変わらないよう、少し待ってから組み直す
+    expect(shopRows(root)).toContain("りんご 2");
+    vi.advanceTimersByTime(500);
+    expect(text("[data-role=step-counter]")).toBe("0 / 3");
+    click("[data-action=next]");
+    expect(shopRows(root)).toContain("りんご 5");
+  });
+
+  it("入力欄は作り直さない（打っている値とフォーカスを残す）", () => {
+    const { q } = setup();
+    const input = q<HTMLInputElement>("[data-role=lab] input");
+    input.focus();
+    type(input, "7");
+    vi.advanceTimersByTime(500);
+    expect(q<HTMLInputElement>("[data-role=lab] input")).toBe(input);
+    expect(input.value).toBe("7");
+    expect(document.activeElement).toBe(input);
+  });
+
+  it("組み直したことを実験の欄に知らせ、「図で見る」で再生を始める（狭い画面では図が実験より上にあるため）", () => {
+    const { q, click } = setup();
+    expect(q<HTMLElement>("[data-role=lab-rebuilt]").hidden).toBe(true);
+    type(q<HTMLInputElement>("[data-role=lab] input"), "3");
+    vi.advanceTimersByTime(500);
+    expect(q<HTMLElement>("[data-role=lab-rebuilt]").hidden).toBe(false);
+    click("[data-action=show-diagram]");
+    expect(q("[data-action=toggle]").textContent).toBe("一時停止");
+  });
+
+  it("別のレッスンへ移って戻ると、入力も図も初期値に戻る", () => {
+    const { root, q, click } = setup();
+    type(q<HTMLInputElement>("[data-role=lab] input"), "5");
+    vi.advanceTimersByTime(500);
+    click("[data-lesson-id=refund]");
+    click("[data-lesson-id=order]");
+    expect(q<HTMLInputElement>("[data-role=lab] input").value).toBe("2");
+    click("[data-action=next]");
+    expect(shopRows(root)).toContain("りんご 2");
+  });
+
+  it("図を組み直さない実験では、知らせを出さない", () => {
+    const topic = fixtureTopic();
+    delete topic.lessons[0].lab!.lesson;
+    const root = document.createElement("div");
+    document.body.append(root);
+    mountApp(root, topic);
+    expect(root.querySelector("[data-role=lab-rebuilt]")).toBeNull();
+  });
+});
+
 describe("後片づけ", () => {
   it("destroy のあとはキー操作に反応しない", () => {
     const { app, press, text } = setup();

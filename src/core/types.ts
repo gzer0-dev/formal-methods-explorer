@@ -75,6 +75,11 @@ export interface LabInput {
   id: string;
   label: string;
   initial: string;
+  /**
+   * 検査で試す入力の値（範囲の端など）。lesson を持つ実験では、この値ごとに組み直したレッスンを検査する。
+   * 初期値だけを試すと、カードの行の上限や題の長さが端の入力で破れても気づけないため。
+   */
+  samples?: string[];
 }
 
 /** 読者が値を入れて結果を確かめる小さな実験。compute は純関数にする。 */
@@ -83,6 +88,12 @@ export interface Lab {
   hint: string;
   inputs: LabInput[];
   compute(values: Record<string, string>): Field[];
+  /**
+   * 入力に合わせて、図・一覧・概要まで組み直したレッスンを返す（省略すると図は変わらない）。
+   * 初期値で組んだものは元のレッスンと同じにする（静的な本文と照合した文言は元のレッスンから作るため）。
+   * 登場物の id と位置は変えない。ステップの数は変わってよい。
+   */
+  lesson?(values: Record<string, string>): Lesson;
 }
 
 export interface Lesson {

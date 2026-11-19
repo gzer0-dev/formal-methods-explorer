@@ -135,6 +135,73 @@ function labProblems(where: string, lesson: Lesson): string[] {
   return problems;
 }
 
+/** 関数（compute・lesson）と実験そのものを除いた、レッスンの中身の比較用の文字列。 */
+function lessonFingerprint(lesson: Lesson): string {
+  const { lab: _lab, ...rest } = lesson;
+  return JSON.stringify(rest, (_key, value: unknown) =>
+    typeof value === "function" ? undefined : value,
+  );
+}
+
+function actorLayout(lesson: Lesson): string {
+  return JSON.stringify(lesson.actors.map((actor) => [actor.id, actor.x, actor.y]));
+}
+
+/**
+ * 入力に合わせて組み直す実験（lab.lesson）の検査。
+ * 初期値で組んだものが元のレッスンと同じか、見本の入力（samples）ごとに組み直したレッスンが壊れていないかを見る。
+ */
+function rebuildProblems(
+  where: string,
+  lesson: Lesson,
+  check: (variant: Lesson, where: string) => string[],
+): string[] {
+  const lab = lesson.lab;
+  if (!lab?.lesson) return [];
+  const problems: string[] = [];
+  const initial = Object.fromEntries(
+    lab.inputs.map((input) => [input.id, input.initial]),
+  );
+  const variants: { label: string; values: Record<string, string> }[] = [
+    { label: "初期値", values: initial },
+  ];
+  for (const input of lab.inputs) {
+    for (const sample of input.samples ?? []) {
+      if (sample === input.initial) continue;
+      variants.push({
+        label: `${input.id}=${sample}`,
+        values: { ...initial, [input.id]: sample },
+      });
+    }
+  }
+  for (const variant of variants) {
+    let rebuilt: Lesson;
+    try {
+      rebuilt = lab.lesson(variant.values);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
+      problems.push(
+        `${where}（${variant.label} のとき）: 組み直しが失敗した: ${reason}`,
+      );
+      continue;
+    }
+    if (
+      variant.label === "初期値" &&
+      lessonFingerprint(rebuilt) !== lessonFingerprint(lesson)
+    ) {
+      problems.push(`${where}: 既定値で組み直したレッスンが元のレッスンと違う`);
+    }
+    if (rebuilt.id !== lesson.id || actorLayout(rebuilt) !== actorLayout(lesson)) {
+      problems.push(
+        `${where}（${variant.label} のとき）: 登場物の id か位置が変わった（図の配置は入力で変えない）`,
+      );
+    }
+    const { lab: _lab, ...withoutLab } = rebuilt;
+    problems.push(...check(withoutLab, `${where}（${variant.label} のとき）`));
+  }
+  return problems;
+}
+
 function lessonProblems(
   lesson: Lesson,
   topic: Topic,
@@ -194,6 +261,13 @@ function lessonProblems(
   }
   problems.push(...visibilityProblems(where, lesson));
   problems.push(...rowCountProblems(where, lesson));
+  problems.push(
+    ...rebuildProblems(where, lesson, (variant, variantWhere) =>
+      lessonProblems(variant, topic, iconIds, kindIds, maxTitleLength).map((problem) =>
+        problem.replace(where, variantWhere),
+      ),
+    ),
+  );
   problems.push(...labProblems(where, lesson));
   return problems;
 }

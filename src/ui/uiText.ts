@@ -26,6 +26,9 @@ export interface UiText {
   overviewTitle: string;
   stepDetailTitle: string;
   labError: string;
+  /** 実験の値で図を組み直したときの知らせと、図へ戻るボタン。 */
+  labRebuilt: string;
+  showDiagram: string;
   simplified: string;
   /** 送り先が複数あるときの区切り。 */
   listSeparator: string;
@@ -59,6 +62,8 @@ export const UI_TEXT: Record<Language, UiText> = {
     overviewTitle: "このレッスンで分かること",
     stepDetailTitle: "このステップの中身",
     labError: "計算できなかった。入力を確かめよう。",
+    labRebuilt: "図をこの値で組み直した。",
+    showDiagram: "図で見る",
     simplified: "簡略化",
     listSeparator: "・",
     languageName: "日本語",
@@ -88,6 +93,8 @@ export const UI_TEXT: Record<Language, UiText> = {
     overviewTitle: "What this lesson shows",
     stepDetailTitle: "Inside this step",
     labError: "Could not compute. Check the input.",
+    labRebuilt: "The diagram was rebuilt with these values.",
+    showDiagram: "Show diagram",
     simplified: "Simplified",
     listSeparator: ", ",
     languageName: "English",

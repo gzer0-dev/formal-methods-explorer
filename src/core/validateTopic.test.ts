@@ -267,3 +267,61 @@ describe("validateTopic", () => {
     ).toContain("実験の compute が失敗した: boom");
   });
 });
+
+describe("validateTopic（入力に合わせて図を作り直す実験）", () => {
+  /** 入力 n で「送る」の題と B の位置を変えられるレッスン。既定の n=1 では validLesson と同じ。 */
+  function buildLesson(n: number, options: { moveB?: boolean } = {}): Lesson {
+    const lesson = validLesson();
+    lesson.steps[0].title = n === 1 ? "送る" : `${n}回送る`.repeat(n > 5 ? 5 : 1);
+    if (options.moveB && n !== 1) lesson.actors[1].x = 60;
+    return lesson;
+  }
+
+  function topicWithRebuild(build: (n: number) => Lesson, samples = ["1", "3"]): Topic {
+    const topic = validTopic();
+    const lesson = build(1);
+    lesson.lab = {
+      title: "回数を変える",
+      hint: "回数を入れる",
+      inputs: [{ id: "n", label: "回数", initial: "1", samples }],
+      compute: (values) => [{ label: "回数", value: values.n ?? "" }],
+      lesson: (values) => build(Number(values.n)),
+    };
+    topic.lessons = [lesson];
+    return topic;
+  }
+
+  it("既定値で組み直したレッスンが元のレッスンと同じで、見本の入力でも壊れなければ問題なし", () => {
+    expect(
+      validateTopic(
+        topicWithRebuild((n) => buildLesson(n)),
+        ICONS,
+      ),
+    ).toEqual([]);
+  });
+
+  it("既定値で組み直したレッスンが元のレッスンと違えば報告する（静的な本文や照合した文言は元のレッスンから作るため）", () => {
+    const topic = topicWithRebuild((n) => buildLesson(n));
+    topic.lessons[0].summary = "書き換えた要約";
+    expect(validateTopic(topic, ICONS).join("\n")).toContain(
+      "既定値で組み直したレッスンが元のレッスンと違う",
+    );
+  });
+
+  it("見本の入力で組み直したレッスンの問題を、その入力の値つきで報告する", () => {
+    const problems = validateTopic(
+      topicWithRebuild((n) => buildLesson(n), ["1", "9"]),
+      ICONS,
+    ).join("\n");
+    expect(problems).toContain("n=9");
+    expect(problems).toContain("title が 16 文字を超えている");
+  });
+
+  it("入力で登場物の位置が変わったら報告する（図の配置は入力で変えない）", () => {
+    const problems = validateTopic(
+      topicWithRebuild((n) => buildLesson(n, { moveB: true })),
+      ICONS,
+    ).join("\n");
+    expect(problems).toContain("登場物の id か位置が変わった");
+  });
+});

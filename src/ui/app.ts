@@ -43,6 +43,8 @@ export interface App {
 type ViewMode = "diagram" | "sequence";
 
 const AUTOPLAY_DELAY_MS = 900;
+// 実験の入力が止まってから図を組み直すまでの間。
+const REBUILD_DELAY_MS = 400;
 // 流れる点が相手に着いてから次のステップまで、読む時間を残す。
 const TRAVEL_SHARE_OF_INTERVAL = 0.45;
 
@@ -94,8 +96,17 @@ export function mountApp(
   let renderedCursor = -1;
   let stage: StageView | null = null;
 
+  // 実験の入力で組み直したレッスン（lab.lesson）。レッスンを選び直すと消え、元のレッスンに戻る（入力欄も初期値から作り直すため）。
+  const rebuiltLessons = new Map<string, Lesson>();
+  let rebuildTimer: number | undefined;
   const lessonOf = (state: PlayerState): Lesson =>
-    topic.lessons.find((lesson) => lesson.id === state.lessonId) ?? topic.lessons[0];
+    rebuiltLessons.get(state.lessonId) ??
+    topic.lessons.find((lesson) => lesson.id === state.lessonId) ??
+    topic.lessons[0];
+  function setOutlineStepCount(lessonId: string, stepCount: number): void {
+    const outline = outlines.find((item) => item.id === lessonId);
+    if (outline) outline.stepCount = stepCount;
+  }
   const kindOf = (step: Step | null) =>
     topic.kinds.find((kind) => kind.id === step?.kind) ?? null;
 
@@ -366,11 +377,54 @@ export function mountApp(
         result.replaceChildren(el("p", { text: text.labError }));
       }
     };
+    const rebuildLesson = lab.lesson?.bind(lab);
+    // 図を組み直したことの知らせ。狭い画面では実験の欄が図より下にあり、図が画面の外で変わるので、ここから図へ戻れるようにする。
+    const rebuiltNotice = rebuildLesson
+      ? el("div", { class: "lab-rebuilt", attrs: { "data-role": "lab-rebuilt" } }, [
+          el("p", { text: text.labRebuilt }),
+          el("button", {
+            class: "control",
+            text: text.showDiagram,
+            attrs: { type: "button", "data-action": "show-diagram" },
+          }),
+        ])
+      : null;
+    if (rebuiltNotice) {
+      rebuiltNotice.hidden = true;
+      rebuiltNotice.querySelector("button")?.addEventListener("click", () => {
+        stageHost.scrollIntoView?.({ block: "center", behavior: "smooth" });
+        dispatch({ type: "play" });
+      });
+    }
+    const scheduleRebuild = () => {
+      if (!rebuildLesson) return;
+      // 1文字打つたびに最初へ戻ると使えないので、打ち終わるのを少し待ってから組み直す。
+      window.clearTimeout(rebuildTimer);
+      const snapshot = { ...values };
+      rebuildTimer = window.setTimeout(() => {
+        let rebuilt: Lesson;
+        try {
+          rebuilt = rebuildLesson(snapshot);
+        } catch (error) {
+          console.error("実験の値で図を組み直せなかった", error);
+          return;
+        }
+        rebuiltLessons.set(lesson.id, rebuilt);
+        setOutlineStepCount(lesson.id, rebuilt.steps.length);
+        window.clearTimeout(tickTimer);
+        player = reducePlayer(outlines, player, { type: "reset" });
+        buildDiagram(rebuilt);
+        renderedCursor = -1;
+        render();
+        if (rebuiltNotice) rebuiltNotice.hidden = false;
+      }, REBUILD_DELAY_MS);
+    };
     const inputs = lab.inputs.map((input) => {
       const field = el("input", { attrs: { type: "text", value: input.initial } });
       field.addEventListener("input", () => {
         values[input.id] = field.value;
         showResult();
+        scheduleRebuild();
       });
       return el("label", { class: "lab-input" }, [
         el("span", { text: input.label }),
@@ -382,7 +436,13 @@ export function mountApp(
       el(
         "section",
         { class: "panel side-section lab", attrs: { "data-role": "lab" } },
-        [el("h3", { text: lab.title }), el("p", { text: lab.hint }), ...inputs, result],
+        [
+          el("h3", { text: lab.title }),
+          el("p", { text: lab.hint }),
+          ...inputs,
+          result,
+          ...(rebuiltNotice ? [rebuiltNotice] : []),
+        ],
       ),
     );
   }
@@ -394,7 +454,8 @@ export function mountApp(
     lessonNav.scrollTo({ left: button.offsetLeft - lessonNav.offsetLeft - 10 });
   }
 
-  function buildLesson(lesson: Lesson): void {
+  /** 図・題・概要・一覧・要約を作る（実験の欄は含めない。入力で組み直すときに入力欄を残すため）。 */
+  function buildDiagram(lesson: Lesson): void {
     stage?.destroy();
     stage = createStage(topic, lesson);
     stageHost.replaceChildren(stage.element);
@@ -405,7 +466,15 @@ export function mountApp(
     lessonIntro.replaceChildren(...introParagraphs.map((text) => el("p", { text })));
     buildTable(lesson);
     buildOverview(lesson);
-    buildLab(lesson);
+  }
+
+  function buildLesson(lesson: Lesson): void {
+    window.clearTimeout(rebuildTimer);
+    rebuiltLessons.delete(lesson.id);
+    const original = topic.lessons.find((item) => item.id === lesson.id) ?? lesson;
+    setOutlineStepCount(original.id, original.steps.length);
+    buildDiagram(original);
+    buildLab(original);
     document.title = `${lesson.title} | ${topic.title}`;
     for (const [lessonId, button] of lessonButtons) {
       const isCurrent = lessonId === lesson.id;
@@ -479,9 +548,13 @@ export function mountApp(
   }
 
   function render(): void {
-    const lesson = lessonOf(player);
+    let lesson = lessonOf(player);
     const hasLessonChanged = renderedLessonId !== lesson.id;
-    if (hasLessonChanged) buildLesson(lesson);
+    if (hasLessonChanged) {
+      buildLesson(lesson);
+      // 選び直したレッスンは、組み直した版を捨てて元のレッスンに戻っている
+      lesson = lessonOf(player);
+    }
     const step = lesson.steps[player.cursor] ?? null;
     // 点を流すのは「ちょうど 1 つ進んだとき」だけ。戻る・飛ぶ・リセットでは動かさない。
     const hasAdvancedByOne = !hasLessonChanged && player.cursor === renderedCursor + 1;
@@ -583,6 +656,7 @@ export function mountApp(
     destroy() {
       window.clearTimeout(tickTimer);
       window.clearTimeout(autoplayTimer);
+      window.clearTimeout(rebuildTimer);
       document.removeEventListener("keydown", onKeyDown);
       window.removeEventListener("hashchange", onHashChange);
       stage?.destroy();

@@ -961,3 +961,17 @@ tbody tr[aria-current="step"] {
     transition: none;
   }
 }
+
+/* 実験の値で図を組み直したときの知らせ（ui/app.ts の buildLab）。狭い画面では図が上にあるので、ここから図へ戻る。 */
+.lab-rebuilt {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  font-size: 13px;
+}
