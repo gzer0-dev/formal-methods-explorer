@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
-import { topic } from "./index";
+import { topic, topics } from "./index";
 
 // 英語の概要ページ（public/en/index.html）は手で書いているので、レッスンを足したときに載せ忘れないよう見張る。
 describe("英語の概要ページ", () => {
@@ -15,9 +15,19 @@ describe("英語の概要ページ", () => {
     expect(listed).toEqual(topic.lessons.map((lesson) => lesson.id));
   });
 
-  it("各レッスンから、日本語の動く図のページへつないでいる", () => {
+  it("各レッスンから、英語で開く動く図のページへつないでいる", () => {
     for (const lesson of topic.lessons) {
-      expect(html).toContain(`href="../#${lesson.id}"`);
+      expect(html).toContain(`href="../?lang=en#${lesson.id}"`);
+    }
+  });
+
+  it("各レッスンの題が、サイトの英語の題と同じ（用語の正本を1つにする）", () => {
+    // prettier がリンクの途中で折り返すので、空白をまとめてから比べる。
+    const flat = html.replace(/\s+/g, " ").replace(/" >/g, '">');
+    const englishLessons = topics.en?.lessons ?? [];
+    expect(englishLessons.length).toBe(topic.lessons.length);
+    for (const lesson of englishLessons) {
+      expect(flat).toContain(`href="../?lang=en#${lesson.id}">${lesson.title}</a`);
     }
   });
 

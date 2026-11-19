@@ -107,5 +107,8 @@ function buildTopic(language: Language): Topic {
 
 export const topic: Topic = buildTopic("ja");
 
-/** 言語ごとの題材。英語は全レッスンの訳し忘れが 0 件になるまで載せない（載せると切り替えのボタンが出る）。 */
-export const topics: Partial<Record<Language, Topic>> = { ja: topic };
+/** 言語ごとの題材。2つあるので画面に切り替えのボタンが出る。英語の訳し忘れは topicContent.test.ts と lessonFiles.test.ts が落とす。 */
+export const topics: Partial<Record<Language, Topic>> = {
+  ja: topic,
+  en: buildTopic("en"),
+};

@@ -144,13 +144,13 @@
         CSP refinement and property-based testing, written for test automation
         engineers.
       </p>
-      <a class="cta" href="../#lost-update">Open the interactive lessons</a>
+      <a class="cta" href="../?lang=en#lost-update">Open the interactive lessons</a>
       <a class="cta" href="https://github.com/gzer0-dev/formal-methods-explorer"
         >Source on GitHub</a
       >
       <p class="note">
-        The interactive lessons are in Japanese. This page is an English overview of
-        what they cover.
+        The interactive lessons are available in English and Japanese. Use the language
+        button at the top right to switch.
       </p>
 
       <section class="panel">
@@ -172,14 +172,14 @@
       <h2 data-category="basics">Why formal methods</h2>
       <ol class="lessons">
         <li data-lesson="lost-update">
-          <a href="../#lost-update">The bug your tests miss</a
+          <a href="../?lang=en#lost-update">The bug your tests miss</a
           ><span
             >Two processes add 1 to the same counter. The test passes, yet some
             interleavings lose an update.</span
           >
         </li>
         <li data-lesson="tool-map">
-          <a href="../#tool-map">Choosing a tool</a
+          <a href="../?lang=en#tool-map">Choosing a tool</a
           ><span
             >TLA+, Alloy, verified languages, property-based testing and CSP/FDR: what
             each is good at.</span
@@ -190,53 +190,53 @@
       <h2 data-category="model">Model checking</h2>
       <ol class="lessons">
         <li data-lesson="state-machine">
-          <a href="../#state-machine">States and transitions</a
+          <a href="../?lang=en#state-machine">States and transitions</a
           ><span
             >Describe an order workflow as states and the actions that change
             them.</span
           >
         </li>
         <li data-lesson="bfs">
-          <a href="../#bfs">Exploring every state</a
+          <a href="../?lang=en#bfs">Exploring every state</a
           ><span
             >Breadth-first search counts each state once, however many paths lead to
             it.</span
           >
         </li>
         <li data-lesson="counterexample">
-          <a href="../#counterexample">Reading a counterexample</a
+          <a href="../?lang=en#counterexample">Reading a counterexample</a
           ><span
             >Walk back from the violating state to recover the shortest failing
             trace.</span
           >
         </li>
         <li data-lesson="invariant">
-          <a href="../#invariant">Writing invariants</a
+          <a href="../?lang=en#invariant">Writing invariants</a
           ><span
             >"Never ship before payment" &mdash; and the one-step trace that breaks
             it.</span
           >
         </li>
         <li data-lesson="deadlock">
-          <a href="../#deadlock">Finding deadlocks</a
+          <a href="../?lang=en#deadlock">Finding deadlocks</a
           ><span
             >Two threads take two locks in opposite orders and wait for each other
             forever.</span
           >
         </li>
         <li data-lesson="liveness">
-          <a href="../#liveness">Does it ever finish?</a
+          <a href="../?lang=en#liveness">Does it ever finish?</a
           ><span
             >Liveness, retries and fairness: a loop that never ends is the
             counterexample.</span
           >
         </li>
         <li data-lesson="state-explosion">
-          <a href="../#state-explosion">Fighting state explosion</a
+          <a href="../?lang=en#state-explosion">Fighting state explosion</a
           ><span>How states grow, and how symmetry and normalisation shrink them.</span>
         </li>
         <li data-lesson="ltl-door">
-          <a href="../#ltl-door">Reading temporal logic</a
+          <a href="../?lang=en#ltl-door">Reading temporal logic</a
           ><span
             >Always, eventually, infinitely often and leads-to, on an elevator
             door.</span
@@ -247,14 +247,14 @@
       <h2 data-category="spec">Specification and proof</h2>
       <ol class="lessons">
         <li data-lesson="preconditions">
-          <a href="../#preconditions">Pre- and postconditions</a
+          <a href="../?lang=en#preconditions">Pre- and postconditions</a
           ><span
             >Design by contract for a withdraw function, checked over a bounded input
             range.</span
           >
         </li>
         <li data-lesson="small-scope">
-          <a href="../#small-scope">Checking every small case</a
+          <a href="../?lang=en#small-scope">Checking every small case</a
           ><span
             >The small-scope hypothesis behind Alloy, on a "who is whose boss"
             relation.</span
@@ -265,68 +265,68 @@
       <h2 data-category="csp">Writing processes (CSP)</h2>
       <ol class="lessons">
         <li data-lesson="csp-process">
-          <a href="../#csp-process">Processes and events</a
+          <a href="../?lang=en#csp-process">Processes and events</a
           ><span>Prefix, external choice, recursion, STOP and SKIP.</span>
         </li>
         <li data-lesson="csp-parallel">
-          <a href="../#csp-parallel">Parallel composition</a
+          <a href="../?lang=en#csp-parallel">Parallel composition</a
           ><span
             >A shared variable written as a process, and a lock that fixes the lost
             update.</span
           >
         </li>
         <li data-lesson="csp-refinement">
-          <a href="../#csp-refinement">Specifications are processes too</a
+          <a href="../?lang=en#csp-refinement">Specifications are processes too</a
           ><span
             >Trace refinement: does the implementation only do what the specification
             allows?</span
           >
         </li>
         <li data-lesson="csp-failures">
-          <a href="../#csp-failures">Telling processes apart by refusals</a
+          <a href="../?lang=en#csp-failures">Telling processes apart by refusals</a
           ><span
             >Same traces, different behaviour: failures refinement catches a printer
             that refuses colour.</span
           >
         </li>
         <li data-lesson="csp-deadlock">
-          <a href="../#csp-deadlock">Dining philosophers</a
+          <a href="../?lang=en#csp-deadlock">Dining philosophers</a
           ><span>Everyone holds one fork and waits for the other.</span>
         </li>
         <li data-lesson="csp-livelock">
-          <a href="../#csp-livelock">Hiding reveals divergence</a
+          <a href="../?lang=en#csp-livelock">Hiding reveals divergence</a
           ><span>Nothing happens on the outside while the inside loops forever.</span>
         </li>
         <li data-lesson="csp-fd">
-          <a href="../#csp-fd">Including divergence</a
+          <a href="../?lang=en#csp-fd">Including divergence</a
           ><span
             >Failures-divergences refinement rejects an implementation that passes
             traces and failures.</span
           >
         </li>
         <li data-lesson="csp-laws">
-          <a href="../#csp-laws">Checking algebraic laws</a
+          <a href="../?lang=en#csp-laws">Checking algebraic laws</a
           ><span
             >Verify CSP laws (and non-laws) by checking refinement in both
             directions.</span
           >
         </li>
         <li data-lesson="csp-rules">
-          <a href="../#csp-rules">Transition rules, one step at a time</a
+          <a href="../?lang=en#csp-rules">Transition rules, one step at a time</a
           ><span
             >Which operational rule produced each step, including the hidden τ
             steps.</span
           >
         </li>
         <li data-lesson="csp-determinism">
-          <a href="../#csp-determinism">Determinism and flaky tests</a
+          <a href="../?lang=en#csp-determinism">Determinism and flaky tests</a
           ><span
             >A test whose result wobbles is often a nondeterministic system &mdash; find
             where it comes from.</span
           >
         </li>
         <li data-lesson="csp-to-code">
-          <a href="../#csp-to-code">From model to code and tests</a
+          <a href="../?lang=en#csp-to-code">From model to code and tests</a
           ><span
             >Processes become threads; the verified model becomes the test oracle.</span
           >
@@ -336,30 +336,30 @@
       <h2 data-category="apply">CSP in practice</h2>
       <ol class="lessons">
         <li data-lesson="csp-abstraction">
-          <a href="../#csp-abstraction">Hide to see less</a
+          <a href="../?lang=en#csp-abstraction">Hide to see less</a
           ><span>Abstraction by hiding, and the divergence it can introduce.</span>
         </li>
         <li data-lesson="csp-anonymity">
-          <a href="../#csp-anonymity">Who paid?</a
+          <a href="../?lang=en#csp-anonymity">Who paid?</a
           ><span
             >The dining cryptographers: anonymity checked as "indistinguishable from
             outside".</span
           >
         </li>
         <li data-lesson="csp-cancel">
-          <a href="../#csp-cancel">Cancelling a wait</a
+          <a href="../?lang=en#csp-cancel">Cancelling a wait</a
           ><span>After a timeout, what happens to the other side's late response?</span>
         </li>
         <li data-lesson="csp-lazy">
-          <a href="../#csp-lazy">Eager and lazy abstraction</a
+          <a href="../?lang=en#csp-lazy">Eager and lazy abstraction</a
           ><span>Do you assume hidden activity keeps going, or that it may stop?</span>
         </li>
         <li data-lesson="csp-shared">
-          <a href="../#csp-shared">Shared channels and starvation</a
+          <a href="../?lang=en#csp-shared">Shared channels and starvation</a
           ><span>No deadlock, no divergence &mdash; yet one client waits forever.</span>
         </li>
         <li data-lesson="csp-channel-passing">
-          <a href="../#csp-channel-passing">Passing channels</a
+          <a href="../?lang=en#csp-channel-passing">Passing channels</a
           ><span
             >A balancer that forgets which sessions are taken hands one session to two
             clients.</span
@@ -370,21 +370,23 @@
       <h2 data-category="case">Case study: from design to implementation</h2>
       <ol class="lessons">
         <li data-lesson="case-design">
-          <a href="../#case-design">Designing the concurrent version</a
+          <a href="../?lang=en#case-design">Designing the concurrent version</a
           ><span
             >A three-input sorting network built from comparator processes (checked with
             0s and 1s).</span
           >
         </li>
         <li data-lesson="case-verify">
-          <a href="../#case-verify">Proving it equivalent to a sequential spec</a
+          <a href="../?lang=en#case-verify"
+            >Proving it equivalent to a sequential spec</a
           ><span
             >Refinement in both directions, and the counterexample when a comparator is
             missing.</span
           >
         </li>
         <li data-lesson="case-implement">
-          <a href="../#case-implement">Checking the implementation against the model</a
+          <a href="../?lang=en#case-implement"
+            >Checking the implementation against the model</a
           ><span
             >A channel-based implementation is run many times; its logs are judged by
             the spec, which catches far more failures than checking results alone.</span
@@ -395,17 +397,17 @@
       <h2 data-category="testing">Connecting to tests</h2>
       <ol class="lessons">
         <li data-lesson="property-test">
-          <a href="../#property-test">Property-based testing</a
+          <a href="../?lang=en#property-test">Property-based testing</a
           ><span
             >Generate inputs, check a property, and shrink the counterexample.</span
           >
         </li>
         <li data-lesson="trace-to-test">
-          <a href="../#trace-to-test">Turning a counterexample into a test</a
+          <a href="../?lang=en#trace-to-test">Turning a counterexample into a test</a
           ><span>Replay the checker's trace as a deterministic regression test.</span>
         </li>
         <li data-lesson="transition-cover">
-          <a href="../#transition-cover">Covering every transition</a
+          <a href="../?lang=en#transition-cover">Covering every transition</a
           ><span>Generate test sequences from a state-machine model.</span>
         </li>
       </ol>
@@ -413,14 +415,14 @@
       <h2 data-category="exercise">Exercises</h2>
       <ol class="lessons">
         <li data-lesson="exercise-model">
-          <a href="../#exercise-model">Exercises: model checking</a
+          <a href="../?lang=en#exercise-model">Exercises: model checking</a
           ><span
             >Answer questions; the page computes the correct answer with the same
             checkers.</span
           >
         </li>
         <li data-lesson="exercise-csp">
-          <a href="../#exercise-csp">Exercises: CSP</a
+          <a href="../?lang=en#exercise-csp">Exercises: CSP</a
           ><span>Refinement, deadlock, determinism and starvation.</span>
         </li>
       </ol>

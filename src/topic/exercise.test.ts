@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { findUntranslated } from "../core/i18n";
 import {
   type ExerciseQuestion,
   formatAnswer,
   gradeExercise,
+  lazy,
   parseAnswer,
   parseQuestionNumber,
 } from "./exercise";
@@ -54,9 +56,15 @@ describe("答えを読む", () => {
   });
 
   it("答えを画面の文字にすると、真偽は「はい」「いいえ」になる", () => {
-    expect(formatAnswer(true)).toBe("はい");
-    expect(formatAnswer(false)).toBe("いいえ");
-    expect(formatAnswer(12)).toBe("12");
+    expect(formatAnswer(true, "ja")).toBe("はい");
+    expect(formatAnswer(false, "ja")).toBe("いいえ");
+    expect(formatAnswer(12, "ja")).toBe("12");
+  });
+
+  it("英語の画面では、真偽は yes / no になる", () => {
+    expect(formatAnswer(true, "en")).toBe("yes");
+    expect(formatAnswer(false, "en")).toBe("no");
+    expect(formatAnswer(12, "en")).toBe("12");
   });
 });
 
@@ -77,7 +85,7 @@ describe("答え合わせ", () => {
       solve: () => ({ answer: false, reason: "いいえの理由" }),
     },
   ];
-  const grade = gradeExercise(questions);
+  const grade = gradeExercise(questions, "ja");
 
   function valueOf(fields: ReturnType<typeof grade>, label: string) {
     return fields.find((field) => field.label === label);
@@ -117,5 +125,68 @@ describe("答え合わせ", () => {
     grade({ number: "1", answer: "12" });
     grade({ number: "1", answer: "13" });
     expect(solveCalls - before).toBeLessThanOrEqual(1);
+  });
+});
+
+describe("英語の答え合わせ", () => {
+  const questions: ExerciseQuestion[] = [
+    {
+      title: "Q1 A number",
+      answerType: "number",
+      solve: () => ({ answer: 12, reason: "Why it is 12" }),
+    },
+    {
+      title: "Q2 Yes or no",
+      answerType: "yesno",
+      solve: () => ({ answer: false, reason: "Why it is no" }),
+    },
+  ];
+  const grade = gradeExercise(questions, "en");
+
+  it("どの番号・どの答えでも、英語の結果に日本語が残らない", () => {
+    const answers = ["", "12", "13", "yes", "no", "maybe"];
+    for (const number of ["", "0", "1", "2", "3"]) {
+      for (const answer of answers) {
+        expect(findUntranslated(grade({ number, answer }))).toEqual([]);
+      }
+    }
+  });
+
+  it("英語で正しい答えを入れると Correct になり、正解の値と解説が出る", () => {
+    const fields = grade({ number: "2", answer: "no" });
+    const result = fields.find((field) => field.label === "Result");
+    expect(result).toMatchObject({ value: "Correct", tone: "ok" });
+    expect(fields.find((field) => field.label === "Correct answer")?.value).toBe("no");
+    expect(fields.find((field) => field.label === "Explanation")?.value).toBe(
+      "Why it is no",
+    );
+  });
+
+  it("英語の画面でも「はい」「いいえ」の答えを受け付ける", () => {
+    const fields = grade({ number: "2", answer: "いいえ" });
+    expect(fields.find((field) => field.label === "Result")?.value).toBe("Correct");
+  });
+
+  it("違う答えなら Incorrect になる", () => {
+    const fields = grade({ number: "1", answer: "13" });
+    expect(fields.find((field) => field.label === "Result")).toMatchObject({
+      value: "Incorrect",
+      tone: "bad",
+    });
+  });
+});
+
+describe("計算を後回しにして使い回す", () => {
+  it("lazy の関数は、最初に呼んだときだけ計算し、2回目からは同じ結果を返す", () => {
+    let calls = 0;
+    const result = lazy(() => {
+      calls += 1;
+      return { value: 42 };
+    });
+    expect(calls).toBe(0);
+    const first = result();
+    const second = result();
+    expect(calls).toBe(1);
+    expect(second).toBe(first);
   });
 });
