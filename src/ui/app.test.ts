@@ -6,7 +6,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { fixtureTopic } from "../core/fixtureTopic";
-import type { Language } from "../core/i18n";
+import { findUntranslated, type Language } from "../core/i18n";
 import { stepIntervalMs } from "../core/player";
 import { mountApp, mountLocalizedApp } from "./app";
 
@@ -397,6 +397,36 @@ describe("言語の切り替え", () => {
     history.replaceState(null, "", "?lang=en");
     const { q } = setupLocalized();
     expect(q("[data-role=lesson-title]").textContent).toBe("Until the order arrives");
+  });
+
+  it("英語の画面には、全レッスンの全ステップを進めても日本語が残らない（切り替えのボタンを除く）", () => {
+    expect(findUntranslated(fixtureTopic("en"))).toEqual([]);
+    history.replaceState(null, "", "?lang=en");
+    const { root, q } = setupLocalized();
+    const seen: string[] = [];
+    const collect = () => {
+      const copy = root.cloneNode(true) as HTMLElement;
+      copy.querySelector("[data-action=switchLanguage]")?.remove();
+      seen.push(copy.textContent ?? "");
+      for (const element of copy.querySelectorAll("[aria-label], [title]")) {
+        seen.push(
+          element.getAttribute("aria-label") ?? "",
+          element.getAttribute("title") ?? "",
+        );
+      }
+    };
+    for (const button of root.querySelectorAll<HTMLElement>("[data-lesson-id]")) {
+      button.click();
+      collect();
+      while (!q<HTMLButtonElement>("[data-action=next]").disabled) {
+        q<HTMLElement>("[data-action=next]").click();
+        collect();
+      }
+      q<HTMLElement>("[data-view-tab=sequence]").click();
+      collect();
+      q<HTMLElement>("[data-view-tab=diagram]").click();
+    }
+    expect(findUntranslated(seen)).toEqual([]);
   });
 
   it("切り替えた後もボタンとキー操作が効く（作り直した画面の配線が生きている）", () => {

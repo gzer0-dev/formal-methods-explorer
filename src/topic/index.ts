@@ -1,7 +1,7 @@
 // 題材の定義。レッスンの並びは、学ぶ順（なぜ → モデル検査 → 仕様と証明 → テストへつなぐ）にしてある。
 
-import type { Language } from "../core/i18n";
-import type { Topic } from "../core/types";
+import { translator, type Language } from "../core/i18n";
+import type { Lesson, Topic } from "../core/types";
 import { TOPIC_ICONS } from "./icons";
 import { bfsLesson } from "./lessons/bfs";
 import { caseDesignLesson } from "./lessons/caseDesign";
@@ -40,57 +40,72 @@ import { stateMachineLesson } from "./lessons/stateMachine";
 import { toolMapLesson } from "./lessons/toolMap";
 import { traceToTestLesson } from "./lessons/traceToTest";
 import { transitionCoverLesson } from "./lessons/transitionCover";
-import { CATEGORIES, KINDS } from "./taxonomy";
+import { categoriesIn, kindsIn } from "./taxonomy";
 
-export const topic: Topic = {
-  id: "formal-methods",
-  title: "形式手法のしくみ",
-  tagline: "テストが見逃すバグを、全部の状態をたどって見つける",
-  brandIcon: "graph-mark",
-  timelineTitle: "検証の流れ",
-  kinds: KINDS,
-  categories: CATEGORIES,
-  lessons: [
-    lostUpdateLesson,
-    toolMapLesson,
-    stateMachineLesson,
-    bfsLesson,
-    counterexampleLesson,
-    invariantLesson,
-    deadlockLesson,
-    livenessLesson,
-    stateExplosionLesson,
-    ltlDoorLesson,
-    preconditionsLesson,
-    smallScopeLesson,
-    cspProcessLesson,
-    cspParallelLesson,
-    cspRefinementLesson,
-    cspFailuresLesson,
-    cspDeadlockLesson,
-    cspLivelockLesson,
-    cspFdLesson,
-    cspLawsLesson,
-    cspRulesLesson,
-    cspDeterminismLesson,
-    cspToCodeLesson,
-    cspAbstractionLesson,
-    cspAnonymityLesson,
-    cspCancelLesson,
-    cspLazyLesson,
-    cspSharedLesson,
-    cspChannelPassingLesson,
-    caseDesignLesson,
-    caseVerifyLesson,
-    caseImplementLesson,
-    propertyTestLesson,
-    traceToTestLesson,
-    transitionCoverLesson,
-    exerciseModelLesson,
-    exerciseCspLesson,
-  ],
-  icons: TOPIC_ICONS,
-};
+// 英訳の途中は、Lesson そのもの（日本語だけ）と (language) => Lesson の関数が混ざる。
+type LessonSource = Lesson | ((language: Language) => Lesson);
+
+const LESSON_SOURCES: LessonSource[] = [
+  lostUpdateLesson,
+  toolMapLesson,
+  stateMachineLesson,
+  bfsLesson,
+  counterexampleLesson,
+  invariantLesson,
+  deadlockLesson,
+  livenessLesson,
+  stateExplosionLesson,
+  ltlDoorLesson,
+  preconditionsLesson,
+  smallScopeLesson,
+  cspProcessLesson,
+  cspParallelLesson,
+  cspRefinementLesson,
+  cspFailuresLesson,
+  cspDeadlockLesson,
+  cspLivelockLesson,
+  cspFdLesson,
+  cspLawsLesson,
+  cspRulesLesson,
+  cspDeterminismLesson,
+  cspToCodeLesson,
+  cspAbstractionLesson,
+  cspAnonymityLesson,
+  cspCancelLesson,
+  cspLazyLesson,
+  cspSharedLesson,
+  cspChannelPassingLesson,
+  caseDesignLesson,
+  caseVerifyLesson,
+  caseImplementLesson,
+  propertyTestLesson,
+  traceToTestLesson,
+  transitionCoverLesson,
+  exerciseModelLesson,
+  exerciseCspLesson,
+];
+
+function buildTopic(language: Language): Topic {
+  const t = translator(language);
+  return {
+    id: "formal-methods",
+    title: t("形式手法のしくみ", "Formal Methods, Step by Step"),
+    tagline: t(
+      "テストが見逃すバグを、全部の状態をたどって見つける",
+      "Find the bugs tests miss by walking every state",
+    ),
+    brandIcon: "graph-mark",
+    timelineTitle: t("検証の流れ", "Verification flow"),
+    kinds: kindsIn(language),
+    categories: categoriesIn(language),
+    lessons: LESSON_SOURCES.map((source) =>
+      typeof source === "function" ? source(language) : source,
+    ),
+    icons: TOPIC_ICONS,
+  };
+}
+
+export const topic: Topic = buildTopic("ja");
 
 /** 言語ごとの題材。英語は全レッスンの訳し忘れが 0 件になるまで載せない（載せると切り替えのボタンが出る）。 */
 export const topics: Partial<Record<Language, Topic>> = { ja: topic };

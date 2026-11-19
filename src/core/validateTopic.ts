@@ -5,12 +5,14 @@
 // 題材を足す・直すたびに src/topicContent.test.ts がこれを実際の題材に当てる。
 
 import { statesAt } from "./timeline";
+import type { Language } from "./i18n";
 import type { Lesson, Section, Step, Topic } from "./types";
 
 const STAGE_MIN = 0;
 const STAGE_MAX = 100;
 // シーケンス図の矢印の上と、図の字幕に 1 行で収まる長さ。
-const MAX_STEP_TITLE_LENGTH = 16;
+// 図の字幕と一覧に1行で収まる長さ。英語は単語の分だけ字数が要る。
+const MAX_STEP_TITLE_LENGTH: Record<Language, number> = { ja: 16, en: 32 };
 
 function isBlank(text: string | undefined): boolean {
   return text === undefined || text.trim() === "";
@@ -39,13 +41,14 @@ function stepProblems(
   step: Step,
   actorIds: Set<string>,
   kindIds: Set<string>,
+  maxTitleLength: number,
 ): string[] {
   const problems: string[] = [];
   for (const key of ["title", "summary", "explain"] as const) {
     if (isBlank(step[key])) problems.push(`${where}: ${key} が空`);
   }
-  if (step.title.length > MAX_STEP_TITLE_LENGTH) {
-    problems.push(`${where}: title が ${MAX_STEP_TITLE_LENGTH} 文字を超えている`);
+  if (step.title.length > maxTitleLength) {
+    problems.push(`${where}: title が ${maxTitleLength} 文字を超えている`);
   }
   if (!kindIds.has(step.kind))
     problems.push(`${where}: 種類 "${step.kind}" が kinds に無い`);
@@ -117,6 +120,7 @@ function lessonProblems(
   topic: Topic,
   iconIds: Set<string>,
   kindIds: Set<string>,
+  maxTitleLength: number,
 ): string[] {
   const where = `レッスン "${lesson.id}"`;
   const problems: string[] = [];
@@ -159,7 +163,13 @@ function lessonProblems(
   }
   for (const step of lesson.steps) {
     problems.push(
-      ...stepProblems(`${where} > ステップ "${step.id}"`, step, actorIds, kindIds),
+      ...stepProblems(
+        `${where} > ステップ "${step.id}"`,
+        step,
+        actorIds,
+        kindIds,
+        maxTitleLength,
+      ),
     );
   }
   problems.push(...visibilityProblems(where, lesson));
@@ -170,7 +180,11 @@ function lessonProblems(
 /**
  * @param builtinIconIds 画面側が持っているアイコンの id。core は画面を知らないので引数で受け取る。
  */
-export function validateTopic(topic: Topic, builtinIconIds: string[]): string[] {
+export function validateTopic(
+  topic: Topic,
+  builtinIconIds: string[],
+  language: Language = "ja",
+): string[] {
   const problems: string[] = [];
   const iconIds = new Set([...builtinIconIds, ...Object.keys(topic.icons ?? {})]);
   const kindIds = new Set(topic.kinds.map((kind) => kind.id));
@@ -197,7 +211,15 @@ export function validateTopic(topic: Topic, builtinIconIds: string[]): string[] 
     }
   }
   for (const lesson of topic.lessons) {
-    problems.push(...lessonProblems(lesson, topic, iconIds, kindIds));
+    problems.push(
+      ...lessonProblems(
+        lesson,
+        topic,
+        iconIds,
+        kindIds,
+        MAX_STEP_TITLE_LENGTH[language],
+      ),
+    );
   }
   return problems;
 }

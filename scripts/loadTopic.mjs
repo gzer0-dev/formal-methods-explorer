@@ -9,7 +9,8 @@ import { build } from "esbuild";
 
 const BUNDLE_DIR = resolve("node_modules/.cache/load-topic");
 
-export async function loadTopic() {
+/** src/topic/index.ts の export を読む。既定は日本語の topic、"topics" で言語ごとの題材。 */
+export async function loadTopic(exportName = "topic") {
   mkdirSync(BUNDLE_DIR, { recursive: true });
   const bundlePath = join(BUNDLE_DIR, `topic-${process.pid}-${Date.now()}.mjs`);
   await build({
@@ -20,7 +21,7 @@ export async function loadTopic() {
     logLevel: "error",
   });
   try {
-    return (await import(pathToFileURL(bundlePath).href)).topic;
+    return (await import(pathToFileURL(bundlePath).href))[exportName];
   } finally {
     rmSync(bundlePath, { force: true });
   }

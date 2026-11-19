@@ -13,7 +13,7 @@ export interface CounterState {
   count: number;
 }
 
-const PROCESS_NAMES = ["A", "B", "C", "D"];
+export const PROCESS_NAMES = ["A", "B", "C", "D"];
 
 function processName(index: number): string {
   return PROCESS_NAMES[index] ?? `P${index + 1}`;

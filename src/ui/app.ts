@@ -315,7 +315,10 @@ export function mountApp(
       badge.style.setProperty("--kind-color", kind?.color ?? "currentColor");
       const where = [actorLabel(lesson, step.actor)];
       if (step.to?.length) {
-        where.push("→", step.to.map((id) => actorLabel(lesson, id)).join("・"));
+        where.push(
+          "→",
+          step.to.map((id) => actorLabel(lesson, id)).join(text.listSeparator),
+        );
       }
       const row = el(
         "tr",

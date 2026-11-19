@@ -27,6 +27,8 @@ export interface UiText {
   stepDetailTitle: string;
   labError: string;
   simplified: string;
+  /** 送り先が複数あるときの区切り。 */
+  listSeparator: string;
   /** 切り替えのボタンに出す、この言語の名前（その言語自身の書き方で）。 */
   languageName: string;
   switchLanguage: string;
@@ -58,6 +60,7 @@ export const UI_TEXT: Record<Language, UiText> = {
     stepDetailTitle: "このステップの中身",
     labError: "計算できなかった。入力を確かめよう。",
     simplified: "簡略化",
+    listSeparator: "・",
     languageName: "日本語",
     switchLanguage: "言語を切り替える",
   },
@@ -86,6 +89,7 @@ export const UI_TEXT: Record<Language, UiText> = {
     stepDetailTitle: "Inside this step",
     labError: "Could not compute. Check the input.",
     simplified: "Simplified",
+    listSeparator: ", ",
     languageName: "English",
     switchLanguage: "Switch language",
   },

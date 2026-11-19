@@ -146,7 +146,7 @@ export const toolMapLesson: Lesson = {
           tone: "ok",
           rows: {
             例: "更新が消える・デッドロック",
-            対応: `${lostUpdateLesson.title} ほか`,
+            対応: `${lostUpdateLesson("ja").title} ほか`,
           },
         },
       },
@@ -155,7 +155,7 @@ export const toolMapLesson: Lesson = {
           title: "このサイトで対応するレッスン",
           fields: [
             {
-              label: lostUpdateLesson.title,
+              label: lostUpdateLesson("ja").title,
               value: "全部の順をたどって、更新が消える並びを見つける",
             },
             { label: bfsLesson.title, value: "幅優先で状態をたどる検査器のしくみ" },

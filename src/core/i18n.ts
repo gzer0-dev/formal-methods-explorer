@@ -12,19 +12,54 @@ export function translator(language: Language): (ja: string, en: string) => stri
   return (ja, en) => (language === "ja" ? ja : en);
 }
 
-// ひらがな・カタカナ・漢字・全角の句読点と括弧（全角の空白は数えない）。英語の画面にこれが残っていたら訳し忘れ。
-const JAPANESE = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}、-〿！-｠]/u;
+// ひらがな・カタカナ・漢字・全角の句読点と括弧・中黒と長音（中黒と長音はカタカナの文字種に入らない）。全角の空白は数えない。英語の画面にこれが残っていたら訳し忘れ。
+const JAPANESE = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}、-〿・ー！-｠]/u;
 
-function isLab(value: object): value is {
+function isLab(value: object): value is ProbedLab {
+  return "inputs" in value && "compute" in value && typeof value.compute === "function";
+}
+
+// 初期値に加えて試す入力。番号で問題を選ぶ演習のように、入力で出る文言が変わる Lab のため。
+const PROBE_VALUES = ["0", "1", "2", "3", "4", "5", "6"];
+
+type ProbedLab = {
   inputs: { id: string; initial: string }[];
   compute: (values: Record<string, string>) => unknown;
-} {
-  return "inputs" in value && "compute" in value && typeof value.compute === "function";
+};
+
+/** 初期値と、入力を1つずつ PROBE_VALUES に変えた結果を調べる。同じ場所の同じ文字列は1回だけ報告する。 */
+function labFindings(lab: ProbedLab, path: string): string[] {
+  const prefix = path ? `${path}.` : "";
+  const initial = Object.fromEntries(
+    lab.inputs.map((input) => [input.id, input.initial]),
+  );
+  const probes: { label: string; values: Record<string, string> }[] = [
+    { label: "initial", values: initial },
+  ];
+  for (const input of lab.inputs) {
+    for (const probe of PROBE_VALUES) {
+      if (probe === input.initial) continue;
+      probes.push({
+        label: `${input.id}="${probe}"`,
+        values: { ...initial, [input.id]: probe },
+      });
+    }
+  }
+  const seen = new Set<string>();
+  const found: string[] = [];
+  for (const probe of probes) {
+    for (const finding of findUntranslated(lab.compute(probe.values))) {
+      if (seen.has(finding)) continue;
+      seen.add(finding);
+      found.push(`${prefix}compute(${probe.label})${finding}`);
+    }
+  }
+  return found;
 }
 
 /**
  * 日本語の文字が残っている文字列を「場所: 文字列」で返す。英語の題材に当てて、訳し忘れを機械で見つけるため。
- * Lab は初期値で compute した結果も調べる（画面に出るのは計算結果なので）。
+ * Lab は初期値といくつかの入力で compute した結果も調べる（画面に出るのは計算結果なので）。
  */
 export function findUntranslated(value: unknown, path = ""): string[] {
   if (typeof value === "string") {
@@ -40,16 +75,6 @@ export function findUntranslated(value: unknown, path = ""): string[] {
     if (JAPANESE.test(key)) found.push(`${path}: キー ${key}`);
     found.push(...findUntranslated(child, childPath));
   }
-  if (isLab(value)) {
-    const initial = Object.fromEntries(
-      value.inputs.map((input) => [input.id, input.initial]),
-    );
-    found.push(
-      ...findUntranslated(
-        value.compute(initial),
-        `${path ? `${path}.` : ""}compute(initial)`,
-      ),
-    );
-  }
+  if (isLab(value)) found.push(...labFindings(value, path));
   return found;
 }

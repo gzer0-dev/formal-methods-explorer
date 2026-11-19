@@ -4,42 +4,51 @@
 import { translator, type Language } from "./i18n";
 import type { Topic } from "./types";
 
-/** 言語を渡すと、題と最初のレッスンの題だけ英語になる（言語の切り替えのテスト用。全部は訳していない）。 */
+/** 言語を渡すと、全部の文言がその言語になる（言語の切り替えのテストで、英語の画面に日本語が残らないことを確かめるため）。 */
 export function fixtureTopic(language: Language = "ja"): Topic {
   const t = translator(language);
   return {
     id: "fixture",
     title: t("見本の題材", "Sample topic"),
-    tagline: "テスト用",
+    tagline: t("テスト用", "For tests"),
     brandIcon: "person",
-    timelineTitle: "処理の流れ",
+    timelineTitle: t("処理の流れ", "Flow"),
     kinds: [
-      { id: "message", label: "通信", color: "#0a6" },
-      { id: "work", label: "処理", color: "#c60" },
+      { id: "message", label: t("通信", "Message"), color: "#0a6" },
+      { id: "work", label: t("処理", "Work"), color: "#c60" },
     ],
     categories: [
-      { id: "basic", label: "基本" },
-      { id: "advanced", label: "応用" },
+      { id: "basic", label: t("基本", "Basics") },
+      { id: "advanced", label: t("応用", "Advanced") },
     ],
     lessons: [
       {
         id: "order",
         category: "basic",
         title: t("注文が届くまで", "Until the order arrives"),
-        subtitle: "客から店へ",
-        summary: "客が店に注文し、店が伝票を作る。",
+        subtitle: t("客から店へ", "From customer to shop"),
+        summary: t(
+          "客が店に注文し、店が伝票を作る。",
+          "The customer orders and the shop writes a slip.",
+        ),
         intro: [
-          "注文は、客から店へ届いて初めて処理が始まる。",
-          "図では、注文が客から店へ流れ、店の中で伝票が現れるところを見る。",
+          t(
+            "注文は、客から店へ届いて初めて処理が始まる。",
+            "Work starts only when the order reaches the shop.",
+          ),
+          t(
+            "図では、注文が客から店へ流れ、店の中で伝票が現れるところを見る。",
+            "Watch the order flow to the shop and a slip appear.",
+          ),
         ],
-        facts: [{ label: "登場物", value: "3" }],
+        facts: [{ label: t("登場物", "Actors"), value: "3" }],
         stageHeight: 300,
         actors: [
-          { id: "customer", label: "客", icon: "person", x: 15, y: 50 },
-          { id: "shop", label: "店", icon: "server", x: 55, y: 50 },
+          { id: "customer", label: t("客", "Customer"), icon: "person", x: 15, y: 50 },
+          { id: "shop", label: t("店", "Shop"), icon: "server", x: 55, y: 50 },
           {
             id: "slip",
-            label: "伝票",
+            label: t("伝票", "Slip"),
             icon: "document",
             x: 88,
             y: 50,
@@ -54,75 +63,109 @@ export function fixtureTopic(language: Language = "ja"): Topic {
           {
             id: "send-order",
             kind: "message",
-            title: "注文を送る",
+            title: t("注文を送る", "Send the order"),
             actor: "customer",
             to: ["shop"],
-            summary: "客が店に注文を送る",
-            explain: "客が欲しい品を店に伝える。",
-            set: { shop: { rows: { 注文: "りんご 2" } } },
+            summary: t("客が店に注文を送る", "The customer sends an order"),
+            explain: t(
+              "客が欲しい品を店に伝える。",
+              "The customer tells the shop what they want.",
+            ),
+            set: {
+              shop: { rows: { [t("注文", "Order")]: t("りんご 2", "apples 2") } },
+            },
             detail: [
-              { title: "注文の中身", fields: [{ label: "品", value: "りんご" }] },
+              {
+                title: t("注文の中身", "Order contents"),
+                fields: [{ label: t("品", "Item"), value: t("りんご", "apple") }],
+              },
             ],
           },
           {
             id: "make-slip",
             kind: "work",
-            title: "伝票を作る",
+            title: t("伝票を作る", "Write a slip"),
             actor: "shop",
-            summary: "店が伝票を作る",
-            explain: "店が注文を伝票に書き写す。",
-            set: { slip: { isHidden: false, rows: { 品: "りんご 2" } } },
-            simplified: "実際の店では在庫の確認が先に入る。",
+            summary: t("店が伝票を作る", "The shop writes a slip"),
+            explain: t(
+              "店が注文を伝票に書き写す。",
+              "The shop copies the order onto a slip.",
+            ),
+            set: {
+              slip: {
+                isHidden: false,
+                rows: { [t("品", "Item")]: t("りんご 2", "apples 2") },
+              },
+            },
+            simplified: t(
+              "実際の店では在庫の確認が先に入る。",
+              "A real shop checks stock first.",
+            ),
           },
           {
             id: "confirm",
             kind: "message",
-            title: "受付を知らせる",
+            title: t("受付を知らせる", "Confirm"),
             actor: "shop",
             to: ["customer", "slip"],
-            summary: "店が客に受付を知らせる",
-            explain: "店が注文を受け付けたことを客に知らせる。",
+            summary: t("店が客に受付を知らせる", "The shop confirms to the customer"),
+            explain: t(
+              "店が注文を受け付けたことを客に知らせる。",
+              "The shop tells the customer the order was accepted.",
+            ),
             set: { customer: { tone: "ok" }, slip: { tone: "ok" } },
           },
         ],
         lab: {
-          title: "合計を確かめる",
-          hint: "個数を入れると合計が出る。",
-          inputs: [{ id: "count", label: "個数", initial: "2" }],
+          title: t("合計を確かめる", "Check the total"),
+          hint: t("個数を入れると合計が出る。", "Enter a count to see the total."),
+          inputs: [{ id: "count", label: t("個数", "Count"), initial: "2" }],
           compute: (values) => [
-            { label: "合計", value: `${Number(values.count) * 100}円` },
+            {
+              label: t("合計", "Total"),
+              value: t(
+                `${Number(values.count) * 100}円`,
+                `${Number(values.count) * 100} yen`,
+              ),
+            },
           ],
         },
       },
       {
         id: "refund",
         category: "advanced",
-        title: "返金の流れ",
-        subtitle: "店から客へ",
-        summary: "店が客に代金を返す。",
-        facts: [{ label: "登場物", value: "2" }],
+        title: t("返金の流れ", "Refund"),
+        subtitle: t("店から客へ", "From shop to customer"),
+        summary: t("店が客に代金を返す。", "The shop pays the customer back."),
+        facts: [{ label: t("登場物", "Actors"), value: "2" }],
         actors: [
-          { id: "customer", label: "客", icon: "person", x: 20, y: 50 },
-          { id: "shop", label: "店", icon: "server", x: 80, y: 50 },
+          { id: "customer", label: t("客", "Customer"), icon: "person", x: 20, y: 50 },
+          { id: "shop", label: t("店", "Shop"), icon: "server", x: 80, y: 50 },
         ],
         links: [{ from: "shop", to: "customer" }],
         steps: [
           {
             id: "pay-back",
             kind: "message",
-            title: "代金を返す",
+            title: t("代金を返す", "Pay back"),
             actor: "shop",
             to: ["customer"],
-            summary: "店が客に代金を返す",
-            explain: "店が受け取った代金を客に返す。",
+            summary: t("店が客に代金を返す", "The shop pays the customer back"),
+            explain: t(
+              "店が受け取った代金を客に返す。",
+              "The shop returns the money it received.",
+            ),
           },
           {
             id: "note",
             kind: "work",
-            title: "記録する",
+            title: t("記録する", "Record"),
             actor: "shop",
-            summary: "店が返金を記録する",
-            explain: "店が返金したことを帳簿に書く。",
+            summary: t("店が返金を記録する", "The shop records the refund"),
+            explain: t(
+              "店が返金したことを帳簿に書く。",
+              "The shop writes the refund in its books.",
+            ),
           },
         ],
       },

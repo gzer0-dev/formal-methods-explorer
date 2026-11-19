@@ -22,6 +22,20 @@ describe("findUntranslated", () => {
     ).toEqual(["lessons[0].facts[0].value: 6通り"]);
   });
 
+  it("中黒と長音（カタカナの文字種に入らない記号）も見つける", () => {
+    expect(findUntranslated({ where: "A ・ B" })).toEqual(["where: A ・ B"]);
+  });
+
+  it("Lab は初期値以外の入力でも計算して調べる（入力で問題を選ぶ演習のため）", () => {
+    const lab: Lab = {
+      title: "Lab",
+      hint: "Type",
+      inputs: [{ id: "n", label: "Number", initial: "1" }],
+      compute: (values) => [field("Question", values.n === "3" ? "第3問" : "Q")],
+    };
+    expect(findUntranslated({ lab })).toEqual(['lab.compute(n="3")[0].value: 第3問']);
+  });
+
   it("全部英語なら空", () => {
     expect(findUntranslated({ title: "Title", rows: { a: "A → B" }, x: 3 })).toEqual(
       [],

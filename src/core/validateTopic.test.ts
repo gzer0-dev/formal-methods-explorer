@@ -179,6 +179,16 @@ describe("validateTopic", () => {
     ).toContain("title が 16 文字を超えている");
   });
 
+  it("英語の題は英語の長さの上限で見る（英単語は日本語より字数が要るため）", () => {
+    const topic = validTopic();
+    topic.lessons[0].steps[0].title = "Send the order to the shop";
+    expect(validateTopic(topic, ICONS, "en")).toEqual([]);
+    topic.lessons[0].steps[0].title = "a".repeat(33);
+    expect(validateTopic(topic, ICONS, "en").join("\n")).toContain(
+      "title が 32 文字を超えている",
+    );
+  });
+
   it("説明が空のステップがある", () => {
     expect(problemsAfter((t) => (t.lessons[0].steps[0].explain = " "))).toContain(
       "explain が空",
