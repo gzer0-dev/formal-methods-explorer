@@ -717,8 +717,11 @@ tbody tr[aria-current="step"] {
   color: var(--ink-soft);
 }
 
+/* 送り先が1つなら1行に収まる。送り先が多いと1行のままでは表が枠より広がり、「起きること」の列が横スクロールの先に隠れるので、
+   幅の上限を決めて折り返す（幅 1200px 前後で、送り先3つのステップが表を押し広げた）。 */
 .cell-where {
-  white-space: nowrap;
+  min-width: 9em;
+  max-width: 16em;
 }
 
 .key-hint {
