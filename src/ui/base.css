@@ -433,7 +433,8 @@ input:focus-visible,
 
 .actor-rows {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  /* 値の列は最低でも数文字ぶんを残す（項目名が長くても値が1行に2文字にならないように） */
+  grid-template-columns: minmax(0, auto) minmax(4.5em, 1fr);
   gap: 1px 8px;
   font-size: 11.5px;
   line-height: 1.55;
@@ -448,6 +449,20 @@ input:focus-visible,
 .actor-rows dt {
   color: var(--ink-soft);
   white-space: nowrap;
+}
+
+/* 項目名が長い行（stage.ts の STACK_LABEL_LENGTH）は、項目名を上・値を下に全幅で置く */
+.actor-rows dt.is-stacked,
+.actor-rows dd.is-stacked {
+  grid-column: 1 / -1;
+}
+
+.actor-rows dt.is-stacked {
+  white-space: normal;
+}
+
+.actor-rows dd.is-stacked {
+  margin-bottom: 2px;
 }
 
 .actor-rows dd {

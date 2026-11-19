@@ -42,6 +42,9 @@ function pairKey(a: string, b: string): string {
   return [a, b].sort().join("|");
 }
 
+// これより長い項目名の行は縦に並べる（6文字までなら、横に並べても値に十分な幅が残る）。
+const STACK_LABEL_LENGTH = 6;
+
 export function createStage(topic: Topic, lesson: Lesson): StageView {
   const stageHeight = lesson.stageHeight ?? DEFAULT_STAGE_HEIGHT;
   const element = el("div", { class: "stage", attrs: { "data-role": "stage" } });
@@ -173,9 +176,14 @@ export function createStage(topic: Topic, lesson: Lesson): StageView {
     rows.replaceChildren();
     for (const [label, value] of Object.entries(state.rows)) {
       const hasChanged = next.step !== null && before[label] !== value;
+      // カードは幅が約150pxしかない。項目名が長いと横並びでは値の列が数文字幅まで縮むので、項目名を上・値を下に置く。
+      const stacked = label.length > STACK_LABEL_LENGTH ? "is-stacked" : "";
       rows.append(
-        el("dt", { text: label }),
-        el("dd", { text: value, class: hasChanged ? "is-changed" : "" }),
+        el("dt", { text: label, class: stacked }),
+        el("dd", {
+          text: value,
+          class: [stacked, hasChanged ? "is-changed" : ""].filter(Boolean).join(" "),
+        }),
       );
     }
   }

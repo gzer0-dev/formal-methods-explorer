@@ -476,3 +476,22 @@ describe("開いてすぐの自動再生", () => {
     expect(mountWithAutoplay(window.innerHeight + 100)).toBe("再生");
   });
 });
+
+describe("図のカードの行", () => {
+  it("項目名が長い行は、項目名を上・値を下に並べる（横に並べると値の列が数文字幅まで縮むため）", () => {
+    const topic = fixtureTopic();
+    topic.lessons[0].steps[0].set = {
+      shop: { rows: { 注文: "りんご 2", コンポーネントテスト: "完了基準を共有" } },
+    };
+    const root = document.createElement("div");
+    document.body.append(root);
+    mountApp(root, topic);
+    root.querySelector<HTMLElement>("[data-action=next]")?.click();
+    const rows = [...root.querySelectorAll('[data-actor-id="shop"] .actor-rows dt')];
+    const short = rows.find((dt) => dt.textContent === "注文");
+    const long = rows.find((dt) => dt.textContent === "コンポーネントテスト");
+    expect(short?.classList.contains("is-stacked")).toBe(false);
+    expect(long?.classList.contains("is-stacked")).toBe(true);
+    expect(long?.nextElementSibling?.classList.contains("is-stacked")).toBe(true);
+  });
+});
