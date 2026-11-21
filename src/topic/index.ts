@@ -14,8 +14,19 @@ import { cspSharedLesson } from "./lessons/cspShared";
 import { cspChannelPassingLesson } from "./lessons/cspChannelPassing";
 import { stateExplosionLesson } from "./lessons/stateExplosion";
 import { ltlDoorLesson } from "./lessons/ltlDoor";
-import { exerciseModelLesson } from "./lessons/exerciseModel";
-import { exerciseCspLesson } from "./lessons/exerciseCsp";
+import { exerciseThreeProcessesLesson } from "./lessons/exerciseThreeProcesses";
+import { exerciseShortestLesson } from "./lessons/exerciseShortest";
+import { exerciseSameOrderLesson } from "./lessons/exerciseSameOrder";
+import { exerciseUnlimitedRetryLesson } from "./lessons/exerciseUnlimitedRetry";
+import { exerciseNoSelfBossLesson } from "./lessons/exerciseNoSelfBoss";
+import { exerciseShrunkLesson } from "./lessons/exerciseShrunk";
+import { exercisePrinterTraceLesson } from "./lessons/exercisePrinterTrace";
+import { exercisePrinterFailuresLesson } from "./lessons/exercisePrinterFailures";
+import { exercisePhilosophersLesson } from "./lessons/exercisePhilosophers";
+import { exerciseCryptoLesson } from "./lessons/exerciseCrypto";
+import { exerciseSortTestLesson } from "./lessons/exerciseSortTest";
+import { exerciseDeterminismLesson } from "./lessons/exerciseDeterminism";
+import { exerciseInboxLesson } from "./lessons/exerciseInbox";
 import { cspFdLesson } from "./lessons/cspFd";
 import { cspLawsLesson } from "./lessons/cspLaws";
 import { cspRulesLesson } from "./lessons/cspRules";
@@ -81,8 +92,19 @@ const LESSON_SOURCES: LessonSource[] = [
   propertyTestLesson,
   traceToTestLesson,
   transitionCoverLesson,
-  exerciseModelLesson,
-  exerciseCspLesson,
+  exerciseThreeProcessesLesson,
+  exerciseShortestLesson,
+  exerciseSameOrderLesson,
+  exerciseUnlimitedRetryLesson,
+  exerciseNoSelfBossLesson,
+  exerciseShrunkLesson,
+  exercisePrinterTraceLesson,
+  exercisePrinterFailuresLesson,
+  exercisePhilosophersLesson,
+  exerciseCryptoLesson,
+  exerciseSortTestLesson,
+  exerciseDeterminismLesson,
+  exerciseInboxLesson,
 ];
 
 function buildTopic(language: Language): Topic {
