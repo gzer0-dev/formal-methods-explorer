@@ -322,6 +322,20 @@
             steps.</span
           >
         </li>
+        <li data-lesson="csp-fixpoint">
+          <a href="../?lang=en#csp-fixpoint">Recursion means a fixed point</a
+          ><span
+            >Approach a recursion by applying its function to STOP again and
+            again.</span
+          >
+        </li>
+        <li data-lesson="csp-normal-form">
+          <a href="../?lang=en#csp-normal-form">Normalising the spec to compare</a
+          ><span
+            >Merge the states after each trace, then walk the implementation
+            alongside.</span
+          >
+        </li>
         <li data-lesson="csp-determinism">
           <a href="../?lang=en#csp-determinism">Determinism and flaky tests</a
           ><span
@@ -368,6 +382,48 @@
             >A balancer that forgets which sessions are taken hands one session to two
             clients.</span
           >
+        </li>
+        <li data-lesson="csp-noninterference">
+          <a href="../?lang=en#csp-noninterference">Does information leak?</a
+          ><span>Can the high user's activity change what the low user sees?.</span>
+        </li>
+        <li data-lesson="csp-fault-tolerance">
+          <a href="../?lang=en#csp-fault-tolerance">Hiding faults for fault tolerance</a
+          ><span
+            >When a disk fails, does the store still meet its spec from outside?.</span
+          >
+        </li>
+        <li data-lesson="csp-deadlock-rules">
+          <a href="../?lang=en#csp-deadlock-rules">Avoiding deadlock by rules</a
+          ><span>From checks on pairs to a whole network that never stops.</span>
+        </li>
+        <li data-lesson="csp-puzzle">
+          <a href="../?lang=en#csp-puzzle">Solving a puzzle with a checker</a
+          ><span
+            >Forbid “solved” in the spec, and the counterexample is the solution.</span
+          >
+        </li>
+      </ol>
+
+      <h2 data-category="protocol">Protocols and time</h2>
+      <ol class="lessons">
+        <li data-lesson="csp-abp">
+          <a href="../?lang=en#csp-abp">The alternating bit protocol</a
+          ><span
+            >Pass values on in order over a channel that loses and duplicates.</span
+          >
+        </li>
+        <li data-lesson="csp-data-independence">
+          <a href="../?lang=en#csp-data-independence">Data independence</a
+          ><span>Why shrinking the set of values need not change the answer.</span>
+        </li>
+        <li data-lesson="csp-tock">
+          <a href="../?lang=en#csp-tock">Counting time with tock</a
+          ><span>Check "reply within 3 tocks" by refinement.</span>
+        </li>
+        <li data-lesson="csp-security-protocol">
+          <a href="../?lang=en#csp-security-protocol">Attacking a crypto protocol</a
+          ><span>Check Needham–Schroeder alongside an intruder.</span>
         </li>
       </ol>
 
@@ -474,6 +530,21 @@
         <li data-lesson="exercise-inbox">
           <a href="../?lang=en#exercise-inbox">Exercise: a first-come inbox</a
           ><span>With a first-come inbox, can customer B wait forever?</span>
+        </li>
+        <li data-lesson="exercise-abp">
+          <a href="../?lang=en#exercise-abp">Exercise: no alternating bit</a
+          ><span>Without flipping the bit, how soon does it break the spec?.</span>
+        </li>
+        <li data-lesson="exercise-noninterference">
+          <a href="../?lang=en#exercise-noninterference">Exercise: does it leak?</a
+          ><span>With separate trays, does the high user's activity leak?.</span>
+        </li>
+        <li data-lesson="exercise-security-protocol">
+          <a href="../?lang=en#exercise-security-protocol"
+            >Exercise: intruder without replay</a
+          ><span
+            >If the intruder cannot resend ciphertexts, is there still an attack?.</span
+          >
         </li>
       </ol>
 

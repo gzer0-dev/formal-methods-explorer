@@ -1,0 +1,21 @@
+-- 再帰の意味は不動点（src/topic/cspFixpoint.ts と同じモデル。例は自作の券売機）。
+-- ガードの無い P = P は ProB に渡すと「詳細化の検査が終わらない」と答え、-csplivelock は発散を報告しない。
+-- そのため照合では、名前を開くたびに unwind を起こしてそれを隠した版で発散を調べる。
+channel coin, ticket, refund, unwind
+
+TICKET = coin -> (ticket -> TICKET [] refund -> TICKET)
+
+-- F を n 回 STOP に当てた近似。
+APPROX(n) = if n == 0 then STOP else coin -> (ticket -> APPROX(n - 1) [] refund -> APPROX(n - 1))
+Approx3 = APPROX(3)
+Approx4 = APPROX(4)
+
+-- F(P) と F(STOP)。
+FTicket = coin -> (ticket -> TICKET [] refund -> TICKET)
+FStop = coin -> (ticket -> STOP [] refund -> STOP)
+
+-- 名前を開く一歩を unwind として起こし、隠して τ にする。
+SELF_UNWIND = unwind -> SELF_UNWIND
+SelfHidden = SELF_UNWIND \ {unwind}
+TICKET_UNWIND = unwind -> coin -> (ticket -> TICKET_UNWIND [] refund -> TICKET_UNWIND)
+TicketHidden = TICKET_UNWIND \ {unwind}

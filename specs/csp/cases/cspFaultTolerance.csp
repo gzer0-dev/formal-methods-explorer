@@ -1,0 +1,33 @@
+-- csp-fault-tolerance の照合用（src/topic/cspFaultTolerance.ts と同じモデル）。
+
+channel write, read : {0, 1}
+channel put, get : {1..3}.{0, 1}
+channel err, crash : {1..3}
+
+Reg(v) = write?x -> Reg(x) [] read!v -> Reg(v)
+
+Disk(i, v) = put.i?x -> Disk(i, x) [] get.i!v -> Disk(i, v) [] crash.i -> Dead(i)
+Dead(i) = put.i?x -> Dead(i) [] err.i -> Dead(i)
+
+Ctl(n) = write?x -> Put(n, 1, x) [] Fetch(n, 1)
+Put(n, i, x) = if i > n then Ctl(n) else put.i.x -> Put(n, i + 1, x)
+Fetch(n, i) = if i > n then STOP else (get.i?v -> Offer(n, v) [] err.i -> Fetch(n, i + 1))
+Offer(n, v) = read.v -> Ctl(n) [] write?x -> Put(n, 1, x)
+
+Limit(n, r) = r > 0 & ([] i : {1..n} @ crash.i -> Limit(n, r - 1))
+
+Internal(n) = {| put.i, get.i, err.i | i <- {1..n} |}
+Crashes(n) = {crash.i | i <- {1..n}}
+
+Store(n) = (Ctl(n) [| Internal(n) |] (||| i : {1..n} @ Disk(i, 0))) \ Internal(n)
+LazyFaults(n, P) = (P [| Crashes(n) |] CHAOS(Crashes(n))) \ Crashes(n)
+View(n, r) = LazyFaults(n, Store(n) [| Crashes(n) |] Limit(n, r))
+
+Spec = Reg(0)
+View1Limit0 = View(1, 0)
+View1Limit1 = View(1, 1)
+View2Limit1 = View(2, 1)
+View2Limit2 = View(2, 2)
+View2Unlimited = LazyFaults(2, Store(2))
+View3Limit2 = View(3, 2)
+View3Limit3 = View(3, 3)

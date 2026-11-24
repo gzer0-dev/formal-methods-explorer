@@ -1,0 +1,13 @@
+-- 仕様を正規化して比べる（src/topic/cspNormalForm.ts と同じモデル。例は自作の問い合わせ窓口）。
+channel req, ok, busy, cancel
+
+SERVER = req -> ((ok -> SERVER |~| busy -> RETRY) [] cancel -> SERVER)
+RETRY = req -> ((ok -> SERVER |~| busy -> RETRY) [] cancel -> SERVER)
+
+-- 手で書き下した正規形（2節点）。NF1 は最小の受け付け集合 {cancel, ok} と {busy, cancel} を内部選択で並べたもの。
+NF0 = req -> NF1
+NF1 = (ok -> NF0 [] cancel -> NF0) |~| (busy -> NF0 [] cancel -> NF0)
+
+IMPL_GOOD = req -> (ok -> IMPL_GOOD [] cancel -> IMPL_GOOD)
+IMPL_EAGER = ok -> req -> IMPL_EAGER
+IMPL_NOCANCEL = req -> ok -> IMPL_NOCANCEL

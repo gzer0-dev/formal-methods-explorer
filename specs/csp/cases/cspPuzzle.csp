@@ -1,0 +1,67 @@
+-- パズルを検査器で解く（src/topic/cspPuzzle.ts と同じモデル。自作の川渡りの変種）。
+-- 番人が舟で猫・小鳥・金魚鉢・犬を運ぶ。舟は重さ2まで（猫と小鳥は1、金魚鉢と犬は2）。
+-- 番人の居ない岸に猫を小鳥・金魚鉢・犬のどれかと残してはいけない。
+datatype Side = L | R
+-- 舟の積み荷。名前はサイトのイベント名（over.cat_bird など）と同じにしてある。
+datatype Cargo = alone | cat | bird | fish | dog | cat_bird
+channel over, back : Cargo
+channel solved
+
+Items = {cat, bird, fish, dog}
+items(alone) = {}
+items(cat_bird) = {cat, bird}
+items(x) = {x}
+flip(L) = R
+flip(R) = L
+
+Keeper(s) =
+  (s == L & ([] c : Cargo @ over.c -> Keeper(R)))
+  [] (s == R & (([] c : Cargo @ back.c -> Keeper(L)) [] solved -> STOP))
+
+With(x) = {c | c <- Cargo, member(x, items(c))}
+ItemP(x, s) =
+  (s == L & ([] c : With(x) @ over.c -> ItemP(x, R)))
+  [] (s == R & (([] c : With(x) @ back.c -> ItemP(x, L)) [] solved -> STOP))
+
+-- 番人・a・b のいる岸を覚え、番人の居ない岸に a と b を残す渡しを断る
+Rule(a, b, k, pa, pb) =
+  [] c : Cargo @
+    let
+      nk = flip(k)
+      na = if member(a, items(c)) then nk else pa
+      nb = if member(b, items(c)) then nk else pb
+      ok = not (na == nb and na != nk)
+    within
+      (ok and k == L) & over.c -> Rule(a, b, nk, na, nb)
+      [] (ok and k == R) & back.c -> Rule(a, b, nk, na, nb)
+
+Part(0) = Keeper(L)
+Part(1) = ItemP(cat, L)
+Part(2) = ItemP(bird, L)
+Part(3) = ItemP(fish, L)
+Part(4) = ItemP(dog, L)
+Part(5) = Rule(cat, bird, L, L, L)
+Part(6) = Rule(cat, fish, L, L, L)
+Part(7) = Rule(cat, dog, L, L, L)
+
+Alpha(0) = {| over, back, solved |}
+Alpha(1) = union({over.c, back.c | c <- With(cat)}, {solved})
+Alpha(2) = union({over.c, back.c | c <- With(bird)}, {solved})
+Alpha(3) = union({over.c, back.c | c <- With(fish)}, {solved})
+Alpha(4) = union({over.c, back.c | c <- With(dog)}, {solved})
+Alpha(i) = {| over, back |}
+
+Puzzle = || i : {0..7} @ [Alpha(i)] Part(i)
+-- 猫がちょっかいを出さない版（規則の部品を外す）
+PuzzleNoRules = || i : {0..4} @ [Alpha(i)] Part(i)
+
+NeverSolved = [] e : {| over, back |} @ e -> NeverSolved
+
+-- solved は n 回渡った後でなければ起きない、という仕様（n より短い解き方が無いことを確かめる）
+AtLeast(n) =
+  ([] e : {| over, back |} @ e -> AtLeast(if n > 0 then n - 1 else 0))
+  [] (n == 0 & solved -> STOP)
+
+-- サイトの検査器が返した最短の解き方（9回）。Puzzle がこの手順を起こせるかを見る
+SiteSolution = over.cat -> back.alone -> over.fish -> back.cat -> over.cat_bird -> back.cat
+  -> over.dog -> back.alone -> over.cat -> solved -> STOP

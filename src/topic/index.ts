@@ -52,6 +52,19 @@ import { stateMachineLesson } from "./lessons/stateMachine";
 import { toolMapLesson } from "./lessons/toolMap";
 import { traceToTestLesson } from "./lessons/traceToTest";
 import { transitionCoverLesson } from "./lessons/transitionCover";
+import { cspFixpointLesson } from "./lessons/cspFixpoint";
+import { cspNormalFormLesson } from "./lessons/cspNormalForm";
+import { cspNoninterferenceLesson } from "./lessons/cspNoninterference";
+import { cspFaultToleranceLesson } from "./lessons/cspFaultTolerance";
+import { cspDeadlockRulesLesson } from "./lessons/cspDeadlockRules";
+import { cspPuzzleLesson } from "./lessons/cspPuzzle";
+import { cspAbpLesson } from "./lessons/cspAbp";
+import { cspDataIndependenceLesson } from "./lessons/cspDataIndependence";
+import { cspTockLesson } from "./lessons/cspTock";
+import { cspSecurityProtocolLesson } from "./lessons/cspSecurityProtocol";
+import { exerciseAbpLesson } from "./lessons/exerciseAbp";
+import { exerciseNoninterferenceLesson } from "./lessons/exerciseNoninterference";
+import { exerciseSecurityProtocolLesson } from "./lessons/exerciseSecurityProtocol";
 import { categoriesIn, kindsIn } from "./taxonomy";
 
 // 英訳の途中は、Lesson そのもの（日本語だけ）と (language) => Lesson の関数が混ざる。
@@ -80,6 +93,8 @@ const LESSON_SOURCES: LessonSource[] = [
   cspPipesLesson,
   cspLawsLesson,
   cspRulesLesson,
+  cspFixpointLesson,
+  cspNormalFormLesson,
   cspDeterminismLesson,
   cspToCodeLesson,
   cspAbstractionLesson,
@@ -88,6 +103,14 @@ const LESSON_SOURCES: LessonSource[] = [
   cspLazyLesson,
   cspSharedLesson,
   cspChannelPassingLesson,
+  cspNoninterferenceLesson,
+  cspFaultToleranceLesson,
+  cspDeadlockRulesLesson,
+  cspPuzzleLesson,
+  cspAbpLesson,
+  cspDataIndependenceLesson,
+  cspTockLesson,
+  cspSecurityProtocolLesson,
   caseDesignLesson,
   caseVerifyLesson,
   caseImplementLesson,
@@ -107,6 +130,9 @@ const LESSON_SOURCES: LessonSource[] = [
   exerciseSortTestLesson,
   exerciseDeterminismLesson,
   exerciseInboxLesson,
+  exerciseAbpLesson,
+  exerciseNoninterferenceLesson,
+  exerciseSecurityProtocolLesson,
 ];
 
 function buildTopic(language: Language): Topic {

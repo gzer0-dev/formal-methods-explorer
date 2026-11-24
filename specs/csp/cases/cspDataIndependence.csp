@@ -1,0 +1,33 @@
+-- データ独立性（src/topic/cspDataIndependence.ts と同じモデル）。値の種類 n を変えて、サイトの検査器の結果と ProB を照合する。
+channel in, out : {0..3}
+
+Vals(n) = {0..n-1}
+
+Fifo(q, n) = (#q < 2 & in?x:Vals(n) -> Fifo(q ^ <x>, n)) [] (#q > 0 & out!head(q) -> Fifo(tail(q), n))
+Stack(s, n) = (#s < 2 & in?x:Vals(n) -> Stack(<x> ^ s, n)) [] (#s > 0 & out!head(s) -> Stack(tail(s), n))
+
+channel mid : {0..3}
+Cell1(n) = in?x:Vals(n) -> mid!x -> Cell1(n)
+Cell2(n) = mid?x:Vals(n) -> out!x -> Cell2(n)
+CellPair(n) = (Cell1(n) [| {| mid |} |] Cell2(n)) \ {| mid |}
+
+-- 多数決: 3つ読み、2つ以上そろった値を出す。3つとも違えば止まる。
+majority(a, b, c) = if a == b or a == c then a else if b == c then b else -1
+Voter(n) = in?a:Vals(n) -> in?b:Vals(n) -> in?c:Vals(n) ->
+  (if majority(a, b, c) >= 0 then out!majority(a, b, c) -> Voter(n) else STOP)
+
+FifoSpec1 = Fifo(<>, 1)
+FifoSpec2 = Fifo(<>, 2)
+FifoSpec3 = Fifo(<>, 3)
+CellPair1 = CellPair(1)
+CellPair2 = CellPair(2)
+CellPair3 = CellPair(3)
+Stack1 = Stack(<>, 1)
+Stack2 = Stack(<>, 2)
+Stack3 = Stack(<>, 3)
+Voter2 = Voter(2)
+Voter3 = Voter(3)
+
+-- 3つ目の値 2 を 1 に付け替える（src/topic/cspDataIndependence.ts の collapseTopValue と同じ）。
+Stack3Collapsed = Stack3[[in.2 <- in.1, out.2 <- out.1]]
+Voter3Collapsed = Voter3[[in.2 <- in.1, out.2 <- out.1]]

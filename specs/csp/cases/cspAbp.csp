@@ -1,0 +1,51 @@
+-- 交互ビットプロトコル（src/topic/cspAbp.ts と同じモデル）。サイトの検査器の結果と ProB を照合する（cspAbp.mjs）。
+-- 通信路は1つだけ持ち、渡す・渡して持ち続ける（重複）・捨てる（落とす）を内部で選ぶ。lose / dup が 0 ならその故障はしない。
+Vals = {0, 1}
+Bits = {0, 1}
+channel in, out : Vals
+channel send, recv : Bits.Vals
+channel ack, getack : Bits
+
+nextBit(b, useBit) = if useBit == 1 then 1 - b else b
+
+-- 渡す（deliver）・重複（again）・落とす（drop）のうち、許された故障だけを内部選択に入れる。
+-- 「dup == 1 & P」と書くと、偽のときに STOP が内部選択に混ざって止まる道ができるので、場合分けで書く。
+Faulty(lose, dup, deliver, again, drop) =
+  if lose == 1 and dup == 1 then deliver |~| again |~| drop
+  else if lose == 1 then deliver |~| drop
+  else if dup == 1 then deliver |~| again
+  else deliver
+
+FwdMedium(lose, dup) = send?b?x -> FwdHolding(lose, dup, b, x)
+FwdHolding(lose, dup, b, x) =
+  Faulty(lose, dup, recv!b!x -> FwdMedium(lose, dup),
+         recv!b!x -> FwdHolding(lose, dup, b, x), FwdMedium(lose, dup))
+
+BackMedium(lose, dup) = ack?b -> BackHolding(lose, dup, b)
+BackHolding(lose, dup, b) =
+  Faulty(lose, dup, getack!b -> BackMedium(lose, dup),
+         getack!b -> BackHolding(lose, dup, b), BackMedium(lose, dup))
+
+Sender(b, useBit) = (in?x -> Sending(b, x, useBit)) [] (getack?_ -> Sender(b, useBit))
+Sending(b, x, useBit) =
+  (send!b!x -> Sending(b, x, useBit))
+  [] (getack?a -> if a == b then Sender(nextBit(b, useBit), useBit) else Sending(b, x, useBit))
+
+Receiver(e, useBit) = recv?b?x ->
+  (if b == e then out!x -> ack!b -> Receiver(nextBit(e, useBit), useBit)
+   else ack!b -> Receiver(e, useBit))
+
+Wires(lose, dup, useBit) =
+  (Sender(0, useBit) [| {| send, getack |} |] (FwdMedium(lose, dup) ||| BackMedium(lose, dup)))
+  [| {| recv, ack |} |] Receiver(0, useBit)
+
+Abp(lose, dup, useBit) = Wires(lose, dup, useBit) \ {| send, recv, ack, getack |}
+
+AbpLossy = Abp(1, 1, 1)
+AbpLoseOnly = Abp(1, 0, 1)
+AbpDupOnly = Abp(0, 1, 1)
+AbpPerfect = Abp(0, 0, 1)
+AbpNoBit = Abp(0, 0, 0)
+
+-- 仕様: 1要素のバッファ。
+Copy = in?x -> out!x -> Copy

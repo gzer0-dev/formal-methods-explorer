@@ -23,6 +23,7 @@ export function categoriesIn(language: Language): Category[] {
     { id: "spec", label: t("仕様と証明", "Specification and proof") },
     { id: "csp", label: t("プロセスで書く（CSP）", "Writing processes (CSP)") },
     { id: "apply", label: t("CSP の応用", "CSP in practice") },
+    { id: "protocol", label: t("プロトコルと時間", "Protocols and time") },
     {
       id: "case",
       label: t("事例: 設計から実装まで", "Case study: from design to implementation"),

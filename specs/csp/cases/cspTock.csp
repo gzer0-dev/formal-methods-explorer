@@ -1,0 +1,26 @@
+-- 離散時間を tock で数える（src/topic/cspTock.ts と同じモデル）。照合は cspTock.mjs。
+channel request, reply, tock
+
+-- 応答まで d tock かかるサーバー。lim >= 0 なら、k が lim に着いた所で tock を書き忘れて時間を止める誤りの版。
+Server(d, lim) = request -> Work(0, d, lim) [] tock -> Server(d, lim)
+Work(k, d, lim) =
+  if k >= d then reply -> Server(d, lim)
+  else if lim >= 0 and k >= lim then STOP
+  else tock -> Work(k + 1, d, lim)
+
+-- 仕様: 依頼の後、応答の前に来てよい tock は n 回まで。
+Deadline(n) = request -> DWait(0, n) [] tock -> Deadline(n)
+DWait(k, n) = if k < n then (reply -> Deadline(n) [] tock -> DWait(k + 1, n)) else reply -> Deadline(n)
+
+TICKING = tock -> TICKING
+
+TockSpec = Deadline(3)
+OnTime = Server(2, -1)
+Slow = Server(4, -1)
+Stuck = Server(4, 3)
+Zeno = Server(0, -1)
+
+OnTimeClock = OnTime \ {request, reply}
+SlowClock = Slow \ {request, reply}
+StuckClock = Stuck \ {request, reply}
+ZenoClock = Zeno \ {request, reply}

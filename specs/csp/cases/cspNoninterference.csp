@@ -1,0 +1,42 @@
+-- csp-noninterference と exercise-noninterference の照合用（src/topic/cspNoninterference.ts と同じモデル）。
+-- サイトの print.* は CSPM の予約語 print を避けて prt.* と書き、hi.send などは hi チャネルの値 send にしている。
+
+datatype Act = send | take
+channel hi, lo : Act
+datatype Level = HL | LL
+channel prt, pick : Level
+
+-- 高い利用者。送るのは合わせて k 回まで（隠した高いイベントだけの輪を作らないため。サイトと同じ）。
+High(k) = (k > 0 & hi.send -> High(k - 1)) [] hi.take -> High(k)
+-- 回数を限らない高い利用者（安定失敗モデルなら発散を見ないので、限らなくても判定できることを確かめる）。
+HighAny = hi.send -> HighAny [] hi.take -> HighAny
+
+Tray = hi.send -> prt.HL -> hi.take -> Tray [] lo.send -> prt.LL -> lo.take -> Tray
+HiTray = hi.send -> prt.HL -> hi.take -> HiTray
+LoTray = lo.send -> prt.LL -> lo.take -> LoTray
+Engine = prt.HL -> Engine [] prt.LL -> Engine
+Slot = hi.send -> pick.HL -> Slot [] lo.send -> pick.LL -> Slot
+QEngine = pick.HL -> prt.HL -> QEngine [] pick.LL -> prt.LL -> QEngine
+QHiTray = prt.HL -> hi.take -> QHiTray
+QLoTray = prt.LL -> lo.take -> QLoTray
+
+Internal = {| prt, pick |}
+HighSet = {| hi |}
+
+SharedSp = Tray [| {| prt |} |] Engine
+SeparateSp = (HiTray ||| LoTray) [| {| prt |} |] Engine
+QueueSp = (Slot [| {| pick |} |] QEngine) [| {| prt |} |] (QHiTray ||| QLoTray)
+
+Sys(Sp, H) = (Sp [| HighSet |] H) \ Internal
+LazyLow(P) = (P [| HighSet |] CHAOS(HighSet)) \ HighSet
+EagerLow(P) = P \ HighSet
+
+SharedLazy0 = LazyLow(Sys(SharedSp, High(0)))
+SharedLazy1 = LazyLow(Sys(SharedSp, High(1)))
+SharedEager1 = EagerLow(Sys(SharedSp, High(1)))
+SeparateLazy1 = LazyLow(Sys(SeparateSp, High(1)))
+SeparateLazy3 = LazyLow(Sys(SeparateSp, High(3)))
+QueueLazy0 = LazyLow(Sys(QueueSp, High(0)))
+QueueLazy2 = LazyLow(Sys(QueueSp, High(2)))
+SharedLazyAny = LazyLow(Sys(SharedSp, HighAny))
+SeparateLazyAny = LazyLow(Sys(SeparateSp, HighAny))

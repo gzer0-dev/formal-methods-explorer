@@ -1,0 +1,34 @@
+-- デッドロックを規則で避ける（src/topic/cspDeadlockRules.ts と同じモデル）。仕事がファイルを2つ借りて使う、自作の例。
+datatype Name = A | B | C
+datatype File = X | Y | Z
+channel take, drop : Name.File
+channel use, enter, leave : Name
+channel note : File.Name
+
+Job(n, f, s) = take.n.f -> take.n.s -> use.n -> drop.n.s -> drop.n.f -> Job(n, f, s)
+-- 使い終えてから、ファイル y の通知を読む仕事
+JobNote(n, f, s, y) = take.n.f -> take.n.s -> use.n -> drop.n.s -> drop.n.f -> note.y.n -> JobNote(n, f, s, y)
+-- 入場券を取ってからファイルを取り、返し終えたら入場券も返す仕事
+JobT(n, f, s) = enter.n -> take.n.f -> take.n.s -> use.n -> drop.n.s -> drop.n.f -> leave.n -> JobT(n, f, s)
+
+FileP(f, us) = [] u : us @ take.u.f -> drop.u.f -> FileP(f, us)
+-- 貸す前に、相手 t へ変更の通知を届けようとするファイル
+NotifyFile(f, us, t) = note.f.t -> ([] u : us @ take.u.f -> drop.u.f -> NotifyFile(f, us, t))
+-- 入場券を total 枚持ち、中にいる仕事を覚える係
+Keeper(inside, total) =
+  ([] n : inside @ leave.n -> Keeper(diff(inside, {n}), total))
+  [] ([] n : diff(Name, inside) @ card(inside) < total & enter.n -> Keeper(union(inside, {n}), total))
+
+TreeFiles = FileP(X, {A}) ||| FileP(Y, {A, B}) ||| FileP(Z, {B})
+Tree = (Job(A, X, Y) ||| Job(B, Z, Y)) [| {| take, drop |} |] TreeFiles
+TreeNotify = (JobNote(A, X, Y, Y) ||| Job(B, Z, Y)) [| {| take, drop, note |} |]
+  (FileP(X, {A}) ||| NotifyFile(Y, {A, B}, A) ||| FileP(Z, {B}))
+
+RingFiles = FileP(X, {A, C}) ||| FileP(Y, {A, B}) ||| FileP(Z, {B, C})
+Ring = (Job(A, X, Y) ||| Job(B, Y, Z) ||| Job(C, Z, X)) [| {| take, drop |} |] RingFiles
+RingOrdered = (Job(A, X, Y) ||| Job(B, Y, Z) ||| Job(C, X, Z)) [| {| take, drop |} |] RingFiles
+RingNoKeeper = (JobT(A, X, Y) ||| JobT(B, Y, Z) ||| JobT(C, Z, X)) [| {| take, drop |} |] RingFiles
+RingTickets(t) = RingNoKeeper [| {| enter, leave |} |] Keeper({}, t)
+RingTickets1 = RingTickets(1)
+RingTickets2 = RingTickets(2)
+RingTickets3 = RingTickets(3)
