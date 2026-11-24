@@ -2,7 +2,7 @@
 
 「形式手法のしくみ」を、1ステップずつ動く図で追える学習サイト。`~/Projects/explainer-template` から派生した。
 読者はテスト自動化エンジニア（SET）で、形式手法は初学者。テストが見逃す並行処理のバグを、モデル検査・不変条件・
-事前条件と事後条件・小さな範囲の全探索・性質ベーステストで見つけ、最後にテストへ落とすまでを、48 レッスンで学ぶ順に並べた（2026-11-18 に CSP の7本、11-19 に CSP の理論・応用・事例の9本と、決定性・Lazy・共用チャネル・チャネル渡し・状態爆発・LTL・演習の8本を足し、11-21 に演習を1問＝1レッスンの13本に分けた）。
+事前条件と事後条件・小さな範囲の全探索・性質ベーステストで見つけ、最後にテストへ落とすまでを、62 レッスンで学ぶ順に並べた（2026-11-18 に CSP の7本、11-19 に CSP の理論・応用・事例の9本と、決定性・Lazy・共用チャネル・チャネル渡し・状態爆発・LTL・演習の8本を足し、11-21 に演習を1問＝1レッスンの13本に分け、11-24 に Roscoe TPC の範囲の11本と演習3問を足した）。
 
 ## この題材で決めたこと（なぜ）
 
@@ -92,6 +92,19 @@
 - 照合: TLC 29件（扉の LTL 8件・哲学者の状態数 4件を追加）、ProB 59件（決定性・Lazy・飢餓の LTL・チャネル渡しを追加）。
   ProB の LTL は MAIN の決まったファイル（specs/csp/MainPool*.csp）でしか調べられない。`-csp_main` というオプションは無い。
   CSPM では print が予約語、チャネル名 c を変数に使うと読み込みで落ちる。
+
+## Roscoe『The Theory and Practice of Concurrency』（TPC）の範囲（2026-11-24）
+
+- ユーザーが本の PDF を渡し「これの内容も含めて」と依頼。節ごとの対応（ある／足す／載せない＋理由）は `docs/TPC_COVERAGE.md`、手分けの指示は `docs/TPC_BRIEF.md`。
+- **PDF は個人の参照用として配られている版**。本文・図・例・名前付きプロセスの定義は写さない。例は自作か古典（交互ビット・Needham–Schroeder と Lowe の攻撃）。
+  facts に `TPC_BOOK`（references.ts）と節だけを書く。PDF と抽出した文をリポジトリに入れない。
+- `csp.ts` に名前の付け替え `rename`（関係による付け替え、τ と ✓ は付け替えない、規則名 Ren / RenTau / RenTick）を足した。
+- 足したレッスン: csp に csp-pipes・csp-fixpoint・csp-normal-form、apply に csp-noninterference・csp-fault-tolerance・csp-deadlock-rules・csp-puzzle、
+  新しい分類 protocol（プロトコルと時間）に csp-abp・csp-data-independence・csp-tock・csp-security-protocol、演習に exercise-abp・exercise-noninterference・exercise-security-protocol。
+- csp.ts に無いものはレッスンの simplified で断っている: 優先度・緊急性（tock の章）、名前を開く一歩を τ にする意味（P = P は unwind を隠して τ を作る）。
+- ProB の照合は `specs/csp/cases/<名前>.csp` と `.mjs` に分けて置く（`check-prob.mjs` が読み込む）。手分けで1つのファイルを取り合わないため。
+  ProB の反例が最短とは限らない所（輪のデッドロック・パズル・ビットなしの交互ビット）は、合否か「n 手までは起きない」の形で照合している。
+  ProB を何人も同時に回すと、既存の照合が毎回違う1件でたまに落ちた（1人で回すと 141 件すべて一致）。
 
 ## レッスンの概要（2026-11-19）
 
