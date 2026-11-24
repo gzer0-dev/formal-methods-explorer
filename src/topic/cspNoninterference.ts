@@ -1,7 +1,7 @@
 // 非干渉（独立性）: 高い利用者（hi）のイベントを Lazy 抽象化で隠し、低い利用者（lo）から見たプロセスが決定的なら、
 // 高い側が何をしても低い側の見え方は変わらない＝漏れない、と判定する（Roscoe TPC 12.4 の考え方。例は自作）。
 // 題材は2人で使うプリンタ。刷った紙を置く受け皿を共有すると、高い利用者が紙を取らないだけで低い利用者が送れなくなる。
-// produces: lowView・spoolerSystem・NONINTERFERENCE_ENV・HIGH_EVENTS・LOW_EVENTS・LEAK_RUN・Design・Abstraction
+// produces: lowView・spoolerSystem・NONINTERFERENCE_ENV・HIGH_EVENTS・LOW_EVENTS・LEAK_RUN・HELD_CAPACITY・Design・Abstraction
 // consumes: csp.ts の演算子と lazyAbstraction。
 
 import {
@@ -16,15 +16,21 @@ import {
   ref,
 } from "./csp";
 
-/** shared: 受け皿が1つ／separate: 受け皿を分ける／queue: 受け皿は分けるが、前に共有の1枠の待ち行列がある。 */
-export type Design = "shared" | "separate" | "queue";
+/**
+ * shared: 受け皿が1つ／separate: 受け皿を分ける／
+ * held: 留め置き印刷（送った仕事は、本人がプリンタの前で取り出すまで、2人で共有する2件分の記憶領域に残る）。
+ */
+export type Design = "shared" | "separate" | "held";
+
+/** 留め置き印刷の記憶領域に置ける仕事の数（2人の合計）。 */
+export const HELD_CAPACITY = 2;
 /** lazy: 高い利用者はいつ止まってもよい／eager: ただ隠す（高い利用者は必ず続ける、と当てにする）。 */
 export type Abstraction = "lazy" | "eager";
 
 export const HIGH_EVENTS = ["hi.send", "hi.take"];
 export const LOW_EVENTS = ["lo.send", "lo.take"];
-/** 中の動き（刷る・待ち行列から取り出す）。どの設計でも外からは見えないので、先に隠す。 */
-const INTERNAL_EVENTS = ["print.hi", "print.lo", "pick.hi", "pick.lo"];
+/** 中の動き（刷る）。どの設計でも外からは見えないので、先に隠す。 */
+const INTERNAL_EVENTS = ["print.hi", "print.lo"];
 
 /** 漏れる実行の例: 高い利用者が送って、紙を取らない。この後、受け皿が1つの設計では lo.send を起こせない。 */
 export const LEAK_RUN = ["hi.send"];
@@ -47,20 +53,19 @@ export const NONINTERFERENCE_ENV: Env = {
   LO_TRAY: () => pre("lo.send", pre("print.lo", pre("lo.take", ref("LO_TRAY")))),
   // 刷る機械は1台を共有する。刷るのは一瞬で、刷り終えた紙を持ち続けない。
   ENGINE: () => ext(pre("print.hi", ref("ENGINE")), pre("print.lo", ref("ENGINE"))),
-  // 待ち行列のある版: 送った仕事は1枠の待ち行列に入り、機械が取り出して刷り、各自の受け皿に置く。
-  SLOT: () =>
-    ext(
-      pre("hi.send", pre("pick.hi", ref("SLOT"))),
-      pre("lo.send", pre("pick.lo", ref("SLOT"))),
-    ),
-  // 機械は取り出した仕事を受け皿に置くまで、次を取り出さない（受け皿が埋まっていると待つ）。
-  QUEUE_ENGINE: () =>
-    ext(
-      pre("pick.hi", pre("print.hi", ref("QUEUE_ENGINE"))),
-      pre("pick.lo", pre("print.lo", ref("QUEUE_ENGINE"))),
-    ),
-  QUEUE_HI_TRAY: () => pre("print.hi", pre("hi.take", ref("QUEUE_HI_TRAY"))),
-  QUEUE_LO_TRAY: () => pre("print.lo", pre("lo.take", ref("QUEUE_LO_TRAY"))),
+  // 留め置き印刷: 送った仕事は記憶領域に置かれ、本人が取り出す（take、その場で刷られる）まで残る。
+  // 記憶領域は2人で共有し、合わせて HELD_CAPACITY 件までしか置けない。
+  HELD: (high: number, low: number) => {
+    const isFull = high + low >= HELD_CAPACITY;
+    const choices: Proc[] = [];
+    if (!isFull) {
+      choices.push(pre("hi.send", ref("HELD", high + 1, low)));
+      choices.push(pre("lo.send", ref("HELD", high, low + 1)));
+    }
+    if (high > 0) choices.push(pre("hi.take", ref("HELD", high - 1, low)));
+    if (low > 0) choices.push(pre("lo.take", ref("HELD", high, low - 1)));
+    return ext(...choices);
+  },
 };
 
 function spooler(design: Design): Proc {
@@ -73,11 +78,7 @@ function spooler(design: Design): Proc {
       ref("ENGINE"),
     );
   }
-  return par(
-    par(ref("SLOT"), ["pick.hi", "pick.lo"], ref("QUEUE_ENGINE")),
-    ["print.hi", "print.lo"],
-    interleave(ref("QUEUE_HI_TRAY"), ref("QUEUE_LO_TRAY")),
-  );
+  return ref("HELD", 0, 0);
 }
 
 /** プリンタと高い利用者を合わせた全体。中の動きは隠し、見えるのは hi.* と lo.* だけ。低い利用者は環境として外に置く。 */

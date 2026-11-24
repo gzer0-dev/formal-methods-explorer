@@ -5,6 +5,7 @@ import {
   checkAuthentication,
   checkAuthenticationHidden,
   HONEST_RUN,
+  intruderCanDeliver,
   intruderKnowledgeAfter,
   LOWE_ATTEMPT,
   LOWE_MISMATCH,
@@ -57,8 +58,8 @@ describe("Needham–Schroeder 公開鍵プロトコルと侵入者", () => {
     );
   });
 
-  it("侵入者が聞いた暗号文を送り直せないなら、元の版でも攻撃は無い", () => {
-    expect(checkAuthentication({ version: "original", canReplay: false }).holds).toBe(
+  it("侵入者が聞いた暗号文を元の送り手・宛先のまま中継することしかできないなら、元の版でも攻撃は無い", () => {
+    expect(checkAuthentication({ version: "original", canRedirect: false }).holds).toBe(
       true,
     );
   });
@@ -90,9 +91,9 @@ describe("Needham–Schroeder 公開鍵プロトコルと侵入者", () => {
     const found: string[] = [];
     for (const version of ["original", "lowe"] as const)
       for (const partners of [["B", "I"], ["B"]] as ("B" | "I")[][])
-        for (const canReplay of [true, false])
-          if (!checkAuthentication({ version, partners, canReplay }).holds)
-            found.push(`${version}/${partners.join("")}/${canReplay}`);
+        for (const canRedirect of [true, false])
+          if (!checkAuthentication({ version, partners, canRedirect }).holds)
+            found.push(`${version}/${partners.join("")}/${canRedirect}`);
     expect(found).toEqual(["original/BI/true"]);
   });
 
@@ -114,7 +115,7 @@ describe("Needham–Schroeder 公開鍵プロトコルと侵入者", () => {
     ]);
   });
 
-  it("B が I に応じた実行では I も Nb を知るが、B が相手を A と信じる実行では、送り直せない侵入者は Nb を知れない", () => {
+  it("B が I に応じた実行では I も Nb を知るが、B が相手を A と信じる実行では、宛先を変えられない侵入者は Nb を知れない", () => {
     expect(intruderKnowledgeAfter(["send.B.I.{Ni,Nb}pkI"], false).nonces).toContain(
       "Nb",
     );
@@ -122,5 +123,20 @@ describe("Needham–Schroeder 公開鍵プロトコルと侵入者", () => {
       "Na",
       "Ni",
     ]);
+  });
+
+  it("宛先を変えられない侵入者でも、聞いた暗号文を元の送り手・宛先のまま中継できるので、正直な実行は最後まで通る", () => {
+    for (const version of ["original", "lowe"] as const) {
+      const system = protocolSystem({ version, canRedirect: false });
+      expect(acceptsTrace(system, NS_ENV, HONEST_RUN[version]).isAccepted).toBe(true);
+    }
+  });
+
+  it("宛先を変えられない侵入者は、B の返事を B からの文として A に中継はできるが、I からの返事として渡せない", () => {
+    const prefix = ATTACK_EXPECTED.slice(0, 3);
+    expect(intruderCanDeliver(prefix, false, "recv.A.B.{Na,Nb}pkA")).toBe(true);
+    expect(intruderCanDeliver(prefix, false, "recv.A.I.{Na,Nb}pkA")).toBe(false);
+    expect(intruderCanDeliver(prefix, true, "recv.A.I.{Na,Nb}pkA")).toBe(true);
+    expect(intruderKnowledgeAfter(prefix, false).ciphertexts).toEqual(["{Na,Nb}pkA"]);
   });
 });

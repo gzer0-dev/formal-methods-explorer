@@ -83,8 +83,8 @@ export function cspPipesLesson(language: Language): Lesson {
       {
         label: t("参考", "Reference"),
         value: t(
-          `${TPC_BOOK} 3.2節（名前の付け替え）・4.1節（パイプ）・5.1節（パイプとバッファ）`,
-          `${TPC_BOOK_EN}, §3.2 (renaming), §4.1 (piping), §5.1 (pipes and buffers)`,
+          `${TPC_BOOK} 3.1節（隠蔽）・3.2節（名前の付け替え）・4.1節（パイプ）・5.1節（パイプとバッファ）`,
+          `${TPC_BOOK_EN}, §3.1 (hiding), §3.2 (renaming), §4.1 (piping), §5.1 (pipes and buffers)`,
         ),
       },
     ],
@@ -288,8 +288,8 @@ export function cspPipesLesson(language: Language): Lesson {
           `Failures refinement against the ${CAPACITY}-place buffer spec ${PAIR_REFINES && SPEC_REFINES_PAIR ? "holds in both directions" : "fails in at least one direction"}`,
         ),
         explain: t(
-          `仕様は「受け取った順に渡し、溜まっている数が${CAPACITY}より少ない間は入力を断らない」バッファで、キューの長さで書いた。実装（セル2つ）から仕様、仕様から実装の両向きで ⊑F が${holdsText(PAIR_REFINES && SPEC_REFINES_PAIR)}ので、2つは外から見て区別できない。`,
-          `The spec is a buffer that passes values on in the order received and never refuses input while it holds fewer than ${CAPACITY}; it is written with the length of a queue. ⊑F ${holdsText(PAIR_REFINES && SPEC_REFINES_PAIR)} in both directions, implementation (two cells) against spec and spec against implementation, so the two cannot be told apart from outside.`,
+          `仕様は「受け取った順に渡し、溜まっている数が${CAPACITY}より少ない間は入力を断らない」バッファで、キューの長さで書いた。ちょうど${CAPACITY}つまで溜める決定的な仕様にしてある。実装（セル2つ）から仕様、仕様から実装の両向きで ⊑F が${holdsText(PAIR_REFINES && SPEC_REFINES_PAIR)}ので、2つは外から見て区別できない。`,
+          `The spec is a buffer that passes values on in the order received and never refuses input while it holds fewer than ${CAPACITY}; it is written with the length of a queue, as a deterministic spec that holds exactly up to ${CAPACITY}. ⊑F ${holdsText(PAIR_REFINES && SPEC_REFINES_PAIR)} in both directions, implementation (two cells) against spec and spec against implementation, so the two cannot be told apart from outside.`,
         ),
         set: {
           spec: {
@@ -362,8 +362,8 @@ export function cspPipesLesson(language: Language): Lesson {
           },
         },
         simplified: t(
-          "流す値は 0 と 1 の2つだけにした。セルも仕様も値によって動きを変えないので、値の数を増やしても結論は変わらない（データ独立性）。",
-          "Only two values, 0 and 1, are passed. Neither the cells nor the spec act differently depending on the value, so using more values would not change the conclusion (data independence).",
+          "流す値は 0 と 1 の2つだけにした。セルも仕様も値によって動きを変えないので、値の数を増やしても結論は変わらない（データ独立性）。また、ここの仕様は「ちょうど2つまで溜め、それより少ない間は入力を断らない」決定的なバッファで、本のバッファの定義より厳しい。本の定義では、空でないときに入力を断ってもよいので、セル1つも3つもバッファに当たる。「足りない」「溜めすぎ」は、この仕様に対しての話である。",
+          'Only two values, 0 and 1, are passed. Neither the cells nor the spec act differently depending on the value, so using more values would not change the conclusion (data independence). Also, the spec here is a deterministic buffer that holds exactly up to two and never refuses input while it holds fewer, which is stricter than the book\'s definition of a buffer. In the book, a buffer may refuse input whenever it is not empty, so one cell and three cells are both buffers. "Not enough" and "too many" are relative to this spec.',
         ),
       },
     ],

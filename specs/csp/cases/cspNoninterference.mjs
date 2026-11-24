@@ -42,13 +42,18 @@ export default ({ runProb, succeeded, failed }) => {
       expect: succeeded,
     },
     {
-      name: "演習（非干渉）: 共有の待ち行列があると、高い利用者2回で非決定的（漏れる）",
-      run: deterministic("QueueLazy2"),
+      name: "演習（非干渉）: 留め置き印刷の共有の記憶領域は、高い利用者2回で非決定的（漏れる）",
+      run: deterministic("HeldLazy2"),
       expect: failed,
     },
     {
-      name: "演習（非干渉）: 共有の待ち行列でも、高い利用者が送らなければ決定的",
-      run: deterministic("QueueLazy0"),
+      name: "演習（非干渉）: 留め置き印刷は、高い利用者1回でも非決定的",
+      run: deterministic("HeldLazy1"),
+      expect: failed,
+    },
+    {
+      name: "演習（非干渉）: 留め置き印刷でも、高い利用者が送らなければ決定的",
+      run: deterministic("HeldLazy0"),
       expect: succeeded,
     },
   ];

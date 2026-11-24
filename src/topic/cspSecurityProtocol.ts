@@ -4,9 +4,10 @@
 // プロトコル（A が始め、B が応じる。{…}pkX は X の公開鍵で暗号化した文で、X だけが開ける）:
 //   1. A → B: {Na,A}pkB   2. B → A: {Na,Nb}pkA（Lowe の直しでは {Na,Nb,B}pkA）   3. A → B: {Nb}pkB
 // 侵入者 I はネットワークそのもの: 送られた文はすべて I が受け取り、届く文はすべて I が出す。I は正規の利用者でもあり
-// （A は I と話すこともある）、pkI の文は開けて nonce を知る。開けない文はそのまま覚え、送り直せる。
+// （A は I と話すこともある）、pkI の文は開けて nonce を知る。開けない文はそのまま覚え、送り手の名前や宛先を変えて届け直せる
+// （canRedirect を外すと、元の送り手・宛先のままの中継だけになる）。
 // 守りたい性質: B が「A と確かめた」（commit.B.A）なら、その前に A が B と話そうとしていた（running.A.B）。
-// produces: NS_ENV・protocolSystem・checkAuthentication・checkAuthenticationHidden・intruderKnowledgeAfter・
+// produces: NS_ENV・protocolSystem・checkAuthentication・checkAuthenticationHidden・intruderKnowledgeAfter・intruderCanDeliver・
 //           ATTACK_EXPECTED・HONEST_RUN・messageOf ／ consumes: csp.ts の演算子と詳細化。
 
 import {
@@ -34,8 +35,11 @@ export interface ProtocolOptions {
   version: Version;
   /** A が話しかける相手の候補。既定は B と I（I と正規に話すことが攻撃の入口になる）。 */
   partners?: Agent[];
-  /** 侵入者が聞いた暗号文を、開けないまま送り直せるか。既定は送り直せる。 */
-  canReplay?: boolean;
+  /**
+   * 侵入者が聞いた暗号文を、送り手の名前や宛先を変えて届けられるか。既定は変えられる。
+   * false でも、元の送り手・宛先のままの中継はできる（できないと正直な実行まで止まり、性質が空虚に成り立つため）。
+   */
+  canRedirect?: boolean;
 }
 
 const encrypt = (contents: string[], key: Agent) => `{${contents.join(",")}}pk${key}`;
@@ -113,22 +117,37 @@ function encodeKnowledge(facts: Set<string>): string {
   return [...facts].sort().join("|");
 }
 
-/** 送られた文から侵入者が覚えること。pkI の文は開けて nonce を知り、それ以外は暗号文のまま覚える。 */
-function learn(facts: Set<string>, message: string, canReplay: boolean): Set<string> {
+// 宛先を変えられないときは、暗号文を「受け手<送り手:文」の形で覚える（届けてよいのは、その受け手へ、その送り手の名前でだけ）。
+const routeFact = (to: string, from: string, message: string) =>
+  `${to}<${from}:${message}`;
+
+/** 送信イベントから侵入者が覚えること。pkI の文は開けて nonce を知り、それ以外は暗号文のまま覚える。 */
+function learn(
+  facts: Set<string>,
+  sendEvent: string,
+  canRedirect: boolean,
+): Set<string> {
+  const [, from, to] = sendEvent.split(".");
+  const message = messageOf(sendEvent)!;
   const { contents, key } = parseMessage(message);
   const next = new Set(facts);
   if (key === "I") {
     for (const item of contents)
       if (item.startsWith("N") && item !== INTRUDER_NONCE) next.add(item);
-  } else if (canReplay) {
-    next.add(message);
+  } else {
+    next.add(canRedirect ? message : routeFact(to!, from!, message));
   }
   return next;
 }
 
-/** 侵入者がこの文を出せるか: 覚えた暗号文そのものか、中身の nonce を全部知っていて自分で暗号化できるか。 */
-function canProduce(facts: Set<string>, message: string): boolean {
-  if (facts.has(message)) return true;
+/**
+ * 侵入者がこの受信イベント（recv.受け手.名乗る送り手.文）を起こせるか: 覚えた暗号文を届けるか
+ * （宛先を変えられないなら元の送り手・宛先のままだけ）、中身の nonce を全部知っていて自分で暗号化できるか。
+ */
+function canProduce(facts: Set<string>, recvEvent: string): boolean {
+  const [, to, claimed] = recvEvent.split(".");
+  const message = messageOf(recvEvent)!;
+  if (facts.has(message) || facts.has(routeFact(to!, claimed!, message))) return true;
   const { contents } = parseMessage(message);
   return contents.every(
     (item) => !item.startsWith("N") || item === INTRUDER_NONCE || facts.has(item),
@@ -139,7 +158,7 @@ function optionsKey(options: ProtocolOptions): [Version, string, number] {
   return [
     options.version,
     partnersOf(options).join(""),
-    options.canReplay === false ? 0 : 1,
+    options.canRedirect === false ? 0 : 1,
   ];
 }
 
@@ -196,7 +215,7 @@ export const NS_ENV: Env = {
   INTRUDER: (version: Version, partners: string, replay: number, knowledge: string) => {
     const facts = parseKnowledge(knowledge);
     const alphabet = cachedAlphabet(version, partners);
-    const canReplay = replay === 1;
+    const canRedirect = replay === 1;
     const hears = alphabet.sends.map((event) =>
       pre(
         event,
@@ -205,12 +224,12 @@ export const NS_ENV: Env = {
           version,
           partners,
           replay,
-          encodeKnowledge(learn(facts, messageOf(event)!, canReplay)),
+          encodeKnowledge(learn(facts, event, canRedirect)),
         ),
       ),
     );
     const delivers = alphabet.recvs
-      .filter((event) => canProduce(facts, messageOf(event)!))
+      .filter((event) => canProduce(facts, event))
       .map((event) =>
         pre(event, ref("INTRUDER", version, partners, replay, knowledge)),
       );
@@ -282,31 +301,35 @@ export interface IntruderKnowledge {
   ciphertexts: string[];
 }
 
+function factsAfter(trace: string[], canRedirect: boolean): Set<string> {
+  let facts = new Set<string>();
+  for (const event of trace)
+    if (event.startsWith("send.")) facts = learn(facts, event, canRedirect);
+  return facts;
+}
+
 /** 並びの中の送信をたどって、侵入者が何を知ったかを返す（図のカードに出す）。 */
 export function intruderKnowledgeAfter(
   trace: string[],
-  canReplay: boolean,
+  canRedirect: boolean,
 ): IntruderKnowledge {
-  let facts = new Set<string>();
-  for (const event of trace) {
-    if (!event.startsWith("send.")) continue;
-    facts = learn(facts, messageOf(event)!, canReplay);
-  }
-  const all = [...facts];
+  const all = [...factsAfter(trace, canRedirect)];
   return {
     nonces: [...all.filter((fact) => fact.startsWith("N")), INTRUDER_NONCE].sort(),
-    ciphertexts: all.filter((fact) => fact.startsWith("{")).sort(),
+    ciphertexts: all
+      .filter((fact) => fact.includes("{"))
+      .map((fact) => fact.slice(fact.indexOf("{")))
+      .sort(),
   };
 }
 
-/** 侵入者がいまの知識でこの文を出せるか（図で「ここで行き詰まる」を見せるのに使う）。 */
-export function intruderCanProduce(
+/** 並びの後に、侵入者がこの受信イベントを起こせるか（図で「ここで行き詰まる」を見せるのに使う）。 */
+export function intruderCanDeliver(
   trace: string[],
-  canReplay: boolean,
-  message: string,
+  canRedirect: boolean,
+  recvEvent: string,
 ): boolean {
-  const knowledge = intruderKnowledgeAfter(trace, canReplay);
-  return canProduce(new Set([...knowledge.nonces, ...knowledge.ciphertexts]), message);
+  return canProduce(factsAfter(trace, canRedirect), recvEvent);
 }
 
 /** Lowe の攻撃の手順（テストで検査器の反例と一致することを見張る）。 */

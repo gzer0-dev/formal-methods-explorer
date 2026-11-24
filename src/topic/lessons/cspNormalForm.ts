@@ -139,8 +139,8 @@ export function cspNormalFormLesson(language: Language): Lesson {
       {
         label: t("参考", "Reference"),
         value: t(
-          `${TPC_BOOK} 11.4節（正規化）・付録C.1（FDR の動作: 正規化と詳細化の検査）`,
-          `${TPC_BOOK_EN}, §11.4 (normalising), Appendix C.1 (how FDR works: normalisation and refinement checking)`,
+          `${TPC_BOOK} 11.4節（代数的な正規形）・付録C.1（FDR の動作: グラフでの正規化と詳細化の検査）`,
+          `${TPC_BOOK_EN}, §11.4 (algebraic normal forms), Appendix C.1 (how FDR works: normalising the graph and checking refinement)`,
         ),
       },
     ],
@@ -434,8 +434,8 @@ export function cspNormalFormLesson(language: Language): Lesson {
           `This site's refinement check and the normal-form walk ${CSP_AGREES ? `agree on all ${IMPL_COUNT}` : "disagree"}. The pre-normal form's ${PRE.nodes.length} nodes match csp.ts's count (${CSP_COUNT})`,
         ),
         explain: t(
-          "このサイトの CSP の実装の詳細化（csp.ts）は、実装の状態と「仕様がいまいうる状態の集まり」の組をたどっている。この集まりが前正規形の節点そのもので、正規形を先に全部作る代わりに、たどりながらその場で作っている。正規化は重く、実装に使える大きさより1〜2桁小さいものにしか使えないので、FDR は仕様の側だけを正規化し、実装は状態を1つずつ組にしてたどる。",
-          "The refinement check in this site's CSP implementation (csp.ts) walks pairs of implementation state and the set of states the spec could currently be in. That set is exactly a pre-normal-form node; instead of building the whole normal form first, it builds nodes on the fly while walking. Normalisation is heavy and only works on systems one or two orders of magnitude smaller than an implementation can be, so FDR normalises only the spec and walks the implementation one state at a time in pairs.",
+          "このサイトの CSP の実装の詳細化（csp.ts）は、実装の状態と「仕様がいまいうる状態の集まり」の組をたどっている。この集まりが前正規形の節点そのもので、正規形を先に全部作る代わりに、たどりながらその場で作っている。FDR の詳細化の検査も、もともと正規化するのは仕様の側だけで、実装は状態を1つずつ組にしてたどる（仕様はふつう小さいので、指数的に増えうる正規化の重さが問題になりにくい）。",
+          "The refinement check in this site's CSP implementation (csp.ts) walks pairs of implementation state and the set of states the spec could currently be in. That set is exactly a pre-normal-form node; instead of building the whole normal form first, it builds nodes on the fly while walking. FDR's refinement check likewise only ever needs to normalise the spec side, walking the implementation one state at a time in pairs (specs are usually small, so the potentially exponential cost of normalisation rarely becomes a problem).",
         ),
         set: {
           checker: {

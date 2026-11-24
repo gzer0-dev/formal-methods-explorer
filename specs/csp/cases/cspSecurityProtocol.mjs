@@ -10,18 +10,23 @@ export default ({ runProb, succeeded, failed }) => [
     trace: ["commit.B.A"],
   },
   {
-    name: "NS: Lowe の直しでは攻撃が無い",
+    name: "NS: Lowe の修正では攻撃が無い",
     run: () => runProb(["-cspref", "AuthSpec", "[T=", "NSLowe"], file),
     expect: succeeded,
   },
   {
-    name: "NS: 直した版でも running.A.B → commit.B.A まで正直に通る（空虚に成り立っていない）",
+    name: "NS: 修正版でも running.A.B → commit.B.A まで正直に通る（空虚に成り立っていない）",
     run: () => runProb(["-cspref", "NSLowe", "[T=", "AuthSpec"], file),
     expect: succeeded,
   },
   {
-    name: "NS: 侵入者が暗号文を送り直せないなら、元の版でも攻撃は無い（演習の正解）",
-    run: () => runProb(["-cspref", "AuthSpec", "[T=", "NSNoReplay"], file),
+    name: "NS: 侵入者が暗号文を元の送り手・宛先のまま中継するしかないなら、元の版でも攻撃は無い（演習の正解）",
+    run: () => runProb(["-cspref", "AuthSpec", "[T=", "NSNoRedirect"], file),
+    expect: succeeded,
+  },
+  {
+    name: "NS: 中継しかできない侵入者でも、正直な running.A.B → commit.B.A は通る（演習の答えが空虚でない）",
+    run: () => runProb(["-cspref", "NSNoRedirect", "[T=", "AuthSpec"], file),
     expect: succeeded,
   },
   {

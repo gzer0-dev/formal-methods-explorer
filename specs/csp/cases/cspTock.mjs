@@ -36,18 +36,39 @@ export default ({ runProb, succeeded, failed }) => [
     contains: "specification_can_do_one_of:,tock",
   },
   {
-    name: "tock: 0 tock で応答するサーバーは隠すと発散する（時間の進まない輪）",
+    name: "tock: 0 tock で応答するサーバーは request まで隠す（環境が無限の速さで依頼できる）と発散する（時間の進まない輪）",
     run: () => runProb(["-cspref", "TICKING", "[FD=", "ZenoClock"], file),
     expect: failed,
   },
   {
-    name: "tock: 0 tock で応答するサーバーは隠すと発散する（発散の検査）",
+    name: "tock: 0 tock で応答するサーバーは request まで隠す（環境が無限の速さで依頼できる）と発散する（発散の検査）",
     run: () => runProb(["-csplivelock", "ZenoClock"], file),
     expect: failed,
   },
   {
     name: "tock: 2 tock で応答するサーバーは隠しても発散しない",
     run: () => runProb(["-csplivelock", "OnTimeClock"], file),
+    expect: succeeded,
+  },
+  {
+    name: "tock: request を遅らせてよい検査（Lazy・⊑F）で、正しいサーバーは時間を止めない",
+    run: () => runProb(["-cspref", "TICKING", "[F=", "OnTimeLazy"], file),
+    expect: succeeded,
+  },
+  {
+    name: "tock: request を遅らせてよい検査で、遅いだけのサーバーも時間を止めない",
+    run: () => runProb(["-cspref", "TICKING", "[F=", "SlowLazy"], file),
+    expect: succeeded,
+  },
+  {
+    name: "tock: request を遅らせてよい検査でも、時間を止めるサーバーは tock×3 の後に tock を断る",
+    run: () => runProb(["-cspref", "TICKING", "[F=", "StuckLazy"], file),
+    expect: failed,
+    trace: ["tock", "tock", "tock"],
+  },
+  {
+    name: "tock: request を遅らせてよい検査では、0 tock のサーバーは時間を止めない（発散は環境の前提から来る）",
+    run: () => runProb(["-cspref", "TICKING", "[F=", "ZenoLazy"], file),
     expect: succeeded,
   },
 ];

@@ -4,6 +4,7 @@ import { traceTo } from "../csp";
 import {
   checkDeadline,
   checkTimeProgress,
+  checkTimeProgressEager,
   NO_TOCK_LIMIT,
   server,
   TOCK_ENV,
@@ -26,12 +27,11 @@ const STUCK_CHECK = checkDeadline(DEADLINE, STUCK);
 const STUCK_REPLY = traceTo(STUCK, TOCK_ENV, "reply");
 const STUCK_PROGRESS = checkTimeProgress(STUCK);
 const ON_TIME_PROGRESS = checkTimeProgress(ON_TIME);
+// 0 tock のサーバーは、request を遅らせてよい検査（主の検査）では時間を止めない。request まで急がせると発散する。
 const ZENO_PROGRESS = checkTimeProgress(server(0));
+const ZENO_EAGER = checkTimeProgressEager(server(0));
 
-const STUCK_FAILURE =
-  STUCK_PROGRESS.counterexample?.kind === "failure"
-    ? STUCK_PROGRESS.counterexample
-    : null;
+const STUCK_FAILURE = STUCK_PROGRESS.counterexample;
 const tockCount = (trace: string[]) => trace.filter((event) => event === "tock").length;
 
 function listText(events: string[], language: Language): string {
@@ -57,6 +57,14 @@ export function cspTockLesson(language: Language): Lesson {
   const holdsText = (holds: boolean) =>
     holds ? t("成り立つ", "holds") : t("成り立たない", "fails");
   const progressText = (result: ReturnType<typeof checkTimeProgress>) => {
+    const counterexample = result.counterexample;
+    if (!counterexample) return t("時間は進み続ける", "time keeps passing");
+    return t(
+      `${listText(counterexample.trace, language)} の後に tock を断る（時間が止まる）`,
+      `refuses tock after ${listText(counterexample.trace, language)} (time stops)`,
+    );
+  };
+  const eagerText = (result: ReturnType<typeof checkTimeProgressEager>) => {
     const counterexample = result.counterexample;
     if (!counterexample) return t("時間は進み続ける", "time keeps passing");
     if (counterexample.kind === "divergence" && counterexample.trace.length === 0)
@@ -135,8 +143,8 @@ export function cspTockLesson(language: Language): Lesson {
       {
         label: t("参考", "Reference"),
         value: t(
-          `${TPC_BOOK} 第14章（離散時間のモデル化）`,
-          `${TPC_BOOK_EN}, chapter 14 (modelling discrete time)`,
+          `${TPC_BOOK} 第14章（主に14.2節）`,
+          `${TPC_BOOK_EN}, chapter 14 (mainly §14.2)`,
         ),
       },
     ],
@@ -247,8 +255,8 @@ export function cspTockLesson(language: Language): Lesson {
           `${listText(ON_TIME_RUN, language)}: after the request it counts ${tockCount(ON_TIME_RUN)} and replies`,
         ),
         explain: t(
-          `サーバーは依頼を受けると作業に入り、${ON_TIME_DELAY} tock 後に応答する。応答はサーバー自身の出力なので、作業が終わったら tock を待たずにすぐ出す（ここでは応答の前に tock を書かないことで、すぐ起きることを表した）。`,
-          `On a request the server starts work and replies ${ON_TIME_DELAY} tocks later. The reply is the server's own output, so it goes out as soon as the work is done, without waiting for a tock (here this is expressed by not offering tock before the reply).`,
+          `サーバーは依頼を受けると作業に入り、${ON_TIME_DELAY} tock 後に応答する。応答はサーバー自身の出力なので、作業が終わったら次の tock より先に出す（ここでは応答の前に tock を書かないことで表した）。`,
+          `On a request the server starts work and replies ${ON_TIME_DELAY} tocks later. The reply is the server's own output, so once the work is done it goes out before the next tock (here this is expressed by not offering tock before the reply).`,
         ),
         set: {
           server: {
@@ -373,25 +381,25 @@ export function cspTockLesson(language: Language): Lesson {
         actor: "checker",
         to: ["clock"],
         summary: t(
-          `tock 以外を隠して TICKING と ⊑FD で比べると、${progressText(STUCK_PROGRESS)}`,
-          `Hide everything but tock and compare with TICKING by ⊑FD: ${progressText(STUCK_PROGRESS)}`,
+          `tock 以外を隠して TICKING と ⊑F で比べると、${progressText(STUCK_PROGRESS)}`,
+          `Hide everything but tock and compare with TICKING by ⊑F: ${progressText(STUCK_PROGRESS)}`,
         ),
         explain: t(
-          `TICKING は tock をずっと続けるだけのプロセス。サーバーの request と reply を隠すと、外から見えるのは tock だけになる。隠したイベントはすぐ起きる（τ）とみなすので、安定した状態で tock を断れば時間が止まったことになる。止まるサーバーは ${listText(STUCK_FAILURE?.trace ?? [], language)} の後に {${(STUCK_FAILURE?.refusal ?? []).join(", ")}} を断るので、この検査で捕まる。期限の検査とは別に回す必要がある。`,
-          `TICKING is a process that only keeps doing tock. Hiding the server's request and reply leaves only tock visible. Hidden events are taken to happen at once (τ), so refusing tock in a stable state means time has stopped. The stopping server refuses {${(STUCK_FAILURE?.refusal ?? []).join(", ")}} after ${listText(STUCK_FAILURE?.trace ?? [], language)}, so this check catches it. It has to be run separately from the deadline check.`,
+          `TICKING は tock をずっと続けるだけのプロセス。request は依頼する側（環境）からの入力なので、環境はいつ送ってもよく、送らずに待たせてもよい。そこで request は Lazy 抽象化（起きてもよく、起きなくてもよい）で隠す。reply はサーバー自身の出力なので普通に隠す（いつまでも待たず、いつか起きる）。外から見えるのは tock だけになり、安定した状態で tock を断れば時間が止まったことになる。止まるサーバーは ${listText(STUCK_FAILURE?.trace ?? [], language)} の後に {${(STUCK_FAILURE?.refusal ?? []).join(", ")}} を断るので、この検査で捕まる。期限の検査とは別に回す必要がある。`,
+          `TICKING is a process that only keeps doing tock. request is an input from the client (the environment), which may send it at any time or keep it waiting. So request is hidden by lazy abstraction (it may happen or not). reply is the server's own output, so it is hidden in the ordinary way (it does not wait for ever, it happens at some point). Only tock is left visible, and refusing tock in a stable state means time has stopped. The stopping server refuses {${(STUCK_FAILURE?.refusal ?? []).join(", ")}} after ${listText(STUCK_FAILURE?.trace ?? [], language)}, so this check catches it. It has to be run separately from the deadline check.`,
         ),
         set: {
           spec: {
             rows: {
               [t("期限", "deadline")]: null,
               [t("仕様", "spec")]: "TICKING",
-              [t("比べ方", "check")]: t("⊑FD（tock だけ）", "⊑FD (tock only)"),
+              [t("比べ方", "check")]: t("⊑F（tock だけ）", "⊑F (tock only)"),
             },
           },
           checker: {
             tone: STUCK_PROGRESS.holds ? "ok" : "bad",
             rows: {
-              [t("時間 ⊑FD", "time ⊑FD")]: holdsText(STUCK_PROGRESS.holds),
+              [t("時間 ⊑F", "time ⊑F")]: holdsText(STUCK_PROGRESS.holds),
               [t(`${ON_TIME_DELAY} tock の版`, `${ON_TIME_DELAY}-tock version`)]:
                 holdsText(ON_TIME_PROGRESS.holds),
             },
@@ -401,20 +409,20 @@ export function cspTockLesson(language: Language): Lesson {
       {
         id: "zeno",
         kind: "found",
-        title: t("tock を挟まない輪", "A loop with no tock"),
+        title: t("環境の前提で変わる", "It depends on the client"),
         actor: "checker",
         to: ["server"],
         summary: t(
-          `0 tock で応答するサーバーを同じ検査で調べると、${progressText(ZENO_PROGRESS)}`,
-          `The same check on a server that replies after 0 tocks: ${progressText(ZENO_PROGRESS)}`,
+          `0 tock で応答するサーバーは、request を遅らせてよい検査では${progressText(ZENO_PROGRESS)}が、request まで急がせて ⊑FD で比べると、${eagerText(ZENO_EAGER)}`,
+          `For a server that replies after 0 tocks, the check that lets request wait gives: ${progressText(ZENO_PROGRESS)}; hiding request too and comparing by ⊑FD gives: ${eagerText(ZENO_EAGER)}`,
         ),
         explain: t(
-          "tock を1回も挟まずに依頼と応答を繰り返せると、隠した後は時間が進まないまま無限に動ける（有限の時間に無限の動き）。これは τ の輪なので、⊑FD の発散として捕まる。現実には起こりえない振る舞いを、モデルの誤りとして見つけている。",
-          "If requests and replies can repeat without a single tock in between, then after hiding it can move forever while time does not pass (infinitely many actions in finite time). That is a loop of τ, so ⊑FD catches it as divergence. The check finds behaviour no real device could have as a mistake in the model.",
+          "request も reply と同じに普通に隠すと、「環境は request を待たずにいくらでも速く送れる」と仮定したことになる。0 tock のサーバーはその前提だと、tock を1回も挟まずに依頼と応答を繰り返せ、時間が進まないまま無限に動ける（発散）。これはサーバーの誤りではなく、環境の前提から来る。だから環境が遅らせてよい入力は、隠し方を分けて調べる。",
+          'If request is hidden in the ordinary way like reply, we have assumed that "the environment sends request as fast as it likes, without waiting". Under that assumption a server that replies after 0 tocks can repeat request and reply without a single tock, moving forever while time does not pass (divergence). That is not a fault of the server; it comes from the assumption about the environment. So inputs the environment may delay are hidden differently when checked.',
         ),
         set: {
           server: {
-            tone: "bad",
+            tone: "wait",
             rows: {
               [delayRow]: tockText(0),
               [t("tock を書いた", "tock written")]: null,
@@ -430,33 +438,34 @@ export function cspTockLesson(language: Language): Lesson {
             },
           },
           clock: {
-            tone: "bad",
+            tone: "wait",
             rows: {
               [t("数えた tock", "tocks counted")]: "0",
               [t("次の tock", "next tock")]: null,
             },
           },
           checker: {
-            tone: ZENO_PROGRESS.holds ? "ok" : "bad",
+            tone: ZENO_PROGRESS.holds ? "wait" : "bad",
             rows: {
               [t("期限 ⊑T", "deadline ⊑T")]: null,
               [t(`${ON_TIME_DELAY} tock の版`, `${ON_TIME_DELAY}-tock version`)]: null,
               [delayRow]: tockText(0),
-              [t("時間 ⊑FD", "time ⊑FD")]: holdsText(ZENO_PROGRESS.holds),
+              [t("時間 ⊑F", "time ⊑F")]: holdsText(ZENO_PROGRESS.holds),
+              [t("急がせて ⊑FD", "eager ⊑FD")]: holdsText(ZENO_EAGER.holds),
             },
           },
         },
         simplified: t(
-          "このサイトの CSP の実装には、緊急性（urgency）や優先度（τ や tock より先に起こす決まり）の演算子が無い。応答をすぐ起こすことは、応答の前に tock を書かないことで手で表した。隠したイベントが tock より優先される規則も無いので、隠した後に τ と tock の両方ができる状態は、安定していないものとして失敗を調べない。",
-          "The CSP implementation on this site has no operators for urgency or priority (rules that make τ or an event happen before tock). Making the reply immediate is expressed by hand, by not offering tock before it. There is also no rule giving hidden events priority over tock, so a state that can do both τ and tock after hiding is treated as unstable and its failures are not checked.",
+          "τ を tock より先に起こす決まり（優先度）は csp.ts に無い。そのため、隠した後に τ と tock の両方ができる状態では、τ の前に tock が何度でも起きうる（そうした状態は安定していないので失敗も調べない）。応答を tock より先に出すことは、応答の前に tock を書かないことで手で表した。",
+          "csp.ts has no rule that makes τ happen before tock (priority). So in a state that can do both τ and tock after hiding, tock may happen any number of times before the τ (such states are unstable, so their failures are not checked either). Sending the reply before any tock is expressed by hand, by not offering tock before it.",
         ),
       },
     ],
     lab: {
       title: t("作業の長さと期限を変える", "Change the work time and the deadline"),
       hint: t(
-        "作業にかかる tock（0〜6）、期限（0〜6）、時間を止める tock の数（0〜6、数でなければ止めない）を入れる。期限は作業が期限以下なら成り立ち、止める数が作業より小さいか、作業が0 tock だと、時間の検査が破れる。",
-        "Enter the work time in tocks (0-6), the deadline (0-6) and the tock count at which time stops (0-6; anything else means it never stops). The deadline holds when the work time is at most the deadline, and the time check fails when the stop count is below the work time or the work takes 0 tocks.",
+        "作業にかかる tock（0〜6）、期限（0〜6）、時間を止める tock の数（0〜6、数でなければ止めない）を入れる。期限は作業が期限以下なら成り立ち、止める数が作業より小さいと時間の検査が破れる。作業が0 tock だと、request まで急がせた検査だけが発散で破れる。",
+        "Enter the work time in tocks (0-6), the deadline (0-6) and the tock count at which time stops (0-6; anything else means it never stops). The deadline holds when the work time is at most the deadline, and the time check fails when the stop count is below the work time. With 0 tocks of work, only the check that hurries request fails, by divergence.",
       ),
       inputs: [
         {
@@ -483,6 +492,7 @@ export function cspTockLesson(language: Language): Lesson {
         const impl = server(delay, limit);
         const deadlineResult = checkDeadline(deadline, impl);
         const progress = checkTimeProgress(impl);
+        const eager = checkTimeProgressEager(impl);
         const reply = traceTo(impl, TOCK_ENV, "reply");
         const fields: Field[] = [
           {
@@ -496,9 +506,14 @@ export function cspTockLesson(language: Language): Lesson {
             tone: deadlineResult.holds ? "ok" : "bad",
           },
           {
-            label: t("時間 ⊑FD", "Time ⊑FD"),
+            label: t("時間 ⊑F", "Time ⊑F"),
             value: progressText(progress),
             tone: progress.holds ? "ok" : "bad",
+          },
+          {
+            label: t("急がせて ⊑FD", "Eager ⊑FD"),
+            value: eagerText(eager),
+            tone: eager.holds ? "ok" : "bad",
           },
           {
             label: t("応答まで", "To a reply"),

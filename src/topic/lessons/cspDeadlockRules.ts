@@ -170,6 +170,14 @@ export function cspDeadlockRulesLesson(language: Language): Lesson {
         ),
       },
       {
+        label: t("係を外した部分", "Without the keeper"),
+        value: t(
+          `${deadlockText(WITHOUT_KEEPER_DEADLOCK?.trace)}（どの部分を取り出しても止まらない性質、本の hereditary deadlock freedom は${WITHOUT_KEEPER_DEADLOCK ? "成り立たない" : "成り立つ"}）`,
+          `${deadlockText(WITHOUT_KEEPER_DEADLOCK?.trace)} (so hereditary deadlock freedom, where no part taken out ever stops, ${WITHOUT_KEEPER_DEADLOCK ? "does not hold" : "holds"})`,
+        ),
+        tone: WITHOUT_KEEPER_DEADLOCK ? "bad" : "ok",
+      },
+      {
         label: t("参考", "Reference"),
         value: t(
           `${TPC_BOOK} 13.1節（基本の原理と木のネットワーク）・13.2節（デッドロックを避ける決まり）・13.5節（局所の解析の限界）`,
@@ -293,8 +301,8 @@ export function cspDeadlockRulesLesson(language: Language): Lesson {
           `The graph is a tree with no strong conflict, so it cannot deadlock. The whole-network check (${TREE_STATES} states) agrees: it ${deadlockText(TREE_DEADLOCK?.trace)}`,
         ),
         explain: t(
-          "全員が待っている状態では、受け付けられない依頼をたどると必ず輪になり、強い衝突が無ければ3つ以上の部品を巡る輪になる。木にはそういう輪が作れないので、デッドロックは起きない。2つずつの結果と図の形だけで、全体を展開せずに言える。",
-          "In a state where everyone waits, following ungranted requests always leads round a cycle, and without strong conflict that cycle passes through three or more components. A tree has no room for such a cycle, so deadlock cannot happen. The claim needs only the pair results and the graph's shape, not the whole state space.",
+          "全員が待っている状態では、受け付けられない依頼をたどると必ず輪になり、強い衝突が無ければ3つ以上の部品を巡る輪になる。木にはそういう輪が作れないので、デッドロックは起きない。もう1つの前提は、どの部品も単独では止まらないこと（本の busy）で、ここでは部品を1つずつ展開して確かめている。部品1つずつと2つずつの結果、図の形だけで、全体を展開せずに言える。",
+          "In a state where everyone waits, following ungranted requests always leads round a cycle, and without strong conflict that cycle passes through three or more components. A tree has no room for such a cycle, so deadlock cannot happen. One more precondition is that no component can stop on its own (busy, in the book's terms); here it is checked by exploring each component by itself. The claim needs only these single and pair results and the graph's shape, not the whole state space.",
         ),
         set: {
           rule: {
@@ -458,8 +466,8 @@ export function cspDeadlockRulesLesson(language: Language): Lesson {
           `Keep C borrowing Z then X, and add a keeper that hands out only two tickets. The whole (${TICKETS_STATES} states) ${deadlockText(TICKETS_DEADLOCK?.trace)}, but the local judgement finds that ${provedText(TICKETS_LOCAL)}`,
         ),
         explain: t(
-          `入場券を取った仕事だけがファイルを借りに行けるので、3人がそろって1つ目を持つことが無い。ただ、図には輪が残り（係を入れて${TICKETS_LOCAL.pairs.length}組）、C は順序を破るので、どちらの規則も当てはまらない。止まらない理由が、係と輪全体の数の釣り合いにあり、2つずつでは見えない。`,
-          `Only a job holding a ticket may go for files, so all three never hold their first file at once. But the graph still has a cycle (${TICKETS_LOCAL.pairs.length} pairs with the keeper) and C breaks the order, so neither rule applies. The reason it never stops lies in a count across the keeper and the whole ring, which pairs cannot see.`,
+          `これは食事する哲学者の古典の解（同時に席に着ける人数を1人減らす給仕役）と同じ仕組みである。入場券を取った仕事だけがファイルを借りに行けるので、3人がそろって1つ目を持つことが無い。ただ、図には輪が残り（係を入れて${TICKETS_LOCAL.pairs.length}組）、C は順序を破るので、どちらの規則も当てはまらない。止まらない理由が、係と輪全体の数の釣り合いにあり、2つずつでは見えない。`,
+          `This is the same mechanism as the classic solution to the dining philosophers (a butler who lets one fewer sit down at a time). Only a job holding a ticket may go for files, so all three never hold their first file at once. But the graph still has a cycle (${TICKETS_LOCAL.pairs.length} pairs with the keeper) and C breaks the order, so neither rule applies. The reason it never stops lies in a count across the keeper and the whole ring, which pairs cannot see.`,
         ),
         set: {
           keeper: {
@@ -512,8 +520,8 @@ export function cspDeadlockRulesLesson(language: Language): Lesson {
           `The sub-network without the keeper stops after ${listText(WITHOUT_KEEPER_DEADLOCK?.trace ?? [])}`,
         ),
         explain: t(
-          "局所の規則が言えるのは「どの部分を取り出しても止まらない」という強い性質である。このネットワークは、係という1つの部品が全体を見張って初めて止まらないので、係を外すと止まる。こういう設計は、全体の検査か、全体で保たれる数（入場券の数）を別に示すしかない。",
-          "What local rules can establish is a strong property: no part of the network, taken out on its own, ever stops. This network avoids deadlock only because one component, the keeper, watches over the whole, so removing it lets the rest stop. A design like this needs a check of the whole network, or a separate argument about a quantity kept across the whole (the number of tickets).",
+          "局所の規則が言えるのは「どの部分を取り出しても止まらない」という強い性質で、本では hereditary deadlock freedom（受け継がれるデッドロックの無さ）と呼ぶ。このネットワークは、係という1つの部品が全体を見張って初めて止まらないので、係を外すと止まる。こういう設計は、全体の検査か、全体で保たれる数（入場券の数）を別に示すしかない。",
+          "What local rules can establish is a strong property, which the book calls hereditary deadlock freedom: no part of the network, taken out on its own, ever stops. This network avoids deadlock only because one component, the keeper, watches over the whole, so removing it lets the rest stop. A design like this needs a check of the whole network, or a separate argument about a quantity kept across the whole (the number of tickets).",
         ),
         set: {
           keeper: {
@@ -531,8 +539,8 @@ export function cspDeadlockRulesLesson(language: Language): Lesson {
           },
         },
         simplified: t(
-          "局所の判定は、組を2つだけ並べ、他の部品とのイベントはいつでも起こせるとして全部の状態を調べる（全体より広く調べるので、衝突が無いという結論は全体でも正しい）。規則は木の規則と資源の順序の規則の2つだけを入れた。部品のイベントはどれも多くて2つの部品が共有する。ProB との照合ではデッドロックの有無だけを比べた（ProB の反例は最短とは限らず、輪では8手の手順を返す）。",
-          "The local judgement puts a pair on its own and explores every state, treating events with other components as always possible (it covers more than the whole network can do, so a finding of no conflict also holds for the whole). Only two rules are included: the tree rule and the resource-ordering rule. Every event is shared by at most two components. The ProB cross-check compares only whether deadlock exists (ProB's counterexample is not always the shortest; for the ring it returns 8 steps).",
+          "局所の判定は、組を2つだけ並べ、他の部品とのイベントはいつでも起こせるとして全部の状態を調べる（全体より広く調べるので、衝突が無いという結論は全体でも正しい）。規則は木の規則と資源の順序の規則の2つだけを入れた。本の規則は前提つきで、どの部品も単独では止まらないこと（busy。ここでも部品ごとに確かめている）と、部品が隠蔽と名前の付け替えを含まないことを置く。この例の部品はどちらも満たす。部品のイベントはどれも多くて2つの部品が共有する。ProB との照合ではデッドロックの有無だけを比べた（ProB の反例は最短とは限らず、輪では8手の手順を返す）。",
+          "The local judgement puts a pair on its own and explores every state, treating events with other components as always possible (it covers more than the whole network can do, so a finding of no conflict also holds for the whole). Only two rules are included: the tree rule and the resource-ordering rule. The book's rules come with preconditions: no component can stop on its own (busy, which is also checked here, component by component) and components contain no hiding or renaming. The components in this example satisfy both. Every event is shared by at most two components. The ProB cross-check compares only whether deadlock exists (ProB's counterexample is not always the shortest; for the ring it returns 8 steps).",
         ),
       },
     ],

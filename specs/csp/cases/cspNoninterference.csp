@@ -4,7 +4,7 @@
 datatype Act = send | take
 channel hi, lo : Act
 datatype Level = HL | LL
-channel prt, pick : Level
+channel prt : Level
 
 -- 高い利用者。送るのは合わせて k 回まで（隠した高いイベントだけの輪を作らないため。サイトと同じ）。
 High(k) = (k > 0 & hi.send -> High(k - 1)) [] hi.take -> High(k)
@@ -15,17 +15,17 @@ Tray = hi.send -> prt.HL -> hi.take -> Tray [] lo.send -> prt.LL -> lo.take -> T
 HiTray = hi.send -> prt.HL -> hi.take -> HiTray
 LoTray = lo.send -> prt.LL -> lo.take -> LoTray
 Engine = prt.HL -> Engine [] prt.LL -> Engine
-Slot = hi.send -> pick.HL -> Slot [] lo.send -> pick.LL -> Slot
-QEngine = pick.HL -> prt.HL -> QEngine [] pick.LL -> prt.LL -> QEngine
-QHiTray = prt.HL -> hi.take -> QHiTray
-QLoTray = prt.LL -> lo.take -> QLoTray
+-- 留め置き印刷: 取り出しを待つ仕事を、2人で共有する記憶領域に合わせて2件まで置く（演習）。
+Held(h, l) = (h + l < 2 & (hi.send -> Held(h + 1, l) [] lo.send -> Held(h, l + 1)))
+             [] (h > 0 & hi.take -> Held(h - 1, l))
+             [] (l > 0 & lo.take -> Held(h, l - 1))
 
-Internal = {| prt, pick |}
+Internal = {| prt |}
 HighSet = {| hi |}
 
 SharedSp = Tray [| {| prt |} |] Engine
 SeparateSp = (HiTray ||| LoTray) [| {| prt |} |] Engine
-QueueSp = (Slot [| {| pick |} |] QEngine) [| {| prt |} |] (QHiTray ||| QLoTray)
+HeldSp = Held(0, 0)
 
 Sys(Sp, H) = (Sp [| HighSet |] H) \ Internal
 LazyLow(P) = (P [| HighSet |] CHAOS(HighSet)) \ HighSet
@@ -36,7 +36,8 @@ SharedLazy1 = LazyLow(Sys(SharedSp, High(1)))
 SharedEager1 = EagerLow(Sys(SharedSp, High(1)))
 SeparateLazy1 = LazyLow(Sys(SeparateSp, High(1)))
 SeparateLazy3 = LazyLow(Sys(SeparateSp, High(3)))
-QueueLazy0 = LazyLow(Sys(QueueSp, High(0)))
-QueueLazy2 = LazyLow(Sys(QueueSp, High(2)))
+HeldLazy0 = LazyLow(Sys(HeldSp, High(0)))
+HeldLazy1 = LazyLow(Sys(HeldSp, High(1)))
+HeldLazy2 = LazyLow(Sys(HeldSp, High(2)))
 SharedLazyAny = LazyLow(Sys(SharedSp, HighAny))
 SeparateLazyAny = LazyLow(Sys(SeparateSp, HighAny))

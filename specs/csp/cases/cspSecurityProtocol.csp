@@ -28,8 +28,11 @@ Responder(v) = [] x : {A, I} @ [] n : Nonce @
 
 -- 侵入者＝ネットワーク。KN は知っている nonce、KH は開けずに覚えた暗号文。pkI の文だけ開けられる。
 learnN(KN, m) = if keyOf(m) == I then union(KN, noncesOf(m)) else KN
+-- rep（宛先を変えられる）なら暗号文 m をそのまま覚え、誰にでもどの名前でも届けられる。
+-- そうでなければ (受け手, 送り手, m) の組で覚え、元の受け手へ元の送り手の名前でだけ中継できる。
 learnH(KH, m, rep) = if keyOf(m) != I and rep then union(KH, {m}) else KH
-canProduce(KN, KH, m) = member(m, KH) or empty(diff(noncesOf(m), KN))
+learnR(KR, x, y, m, rep) = if keyOf(m) != I and not rep then union(KR, {(y, x, m)}) else KR
+canProduce(KN, KH, KR, to, from, m) = member(m, KH) or member((to, from, m), KR) or empty(diff(noncesOf(m), KN))
 
 -- 侵入者が相手にするのは、正直な A と B が送る文・受け付ける文だけ（それ以外は同期の相手がいないので足りる）。
 SendTuples(v, P) = union(union({(A, p, M1.Na.A.p) | p <- P}, {(A, p, M3.n.p) | p <- P, n <- Nonce}),
@@ -37,11 +40,12 @@ SendTuples(v, P) = union(union({(A, p, M1.Na.A.p) | p <- P}, {(A, p, M3.n.p) | p
 RecvTuples(v, P) = union(union({(A, p, msg2(v, Na, n, p, A)) | p <- P, n <- Nonce}, {(B, x, M1.n.x.B) | x <- {A, I}, n <- Nonce}),
                          {(B, x, M3.Nb.B) | x <- {A, I}})
 
-Intruder(v, P, rep, KN, KH) =
-  ([] (x, y, m) : SendTuples(v, P) @ send.x.y.m -> Intruder(v, P, rep, learnN(KN, m), learnH(KH, m, rep)))
-  [] ([] (x, y, m) : RecvTuples(v, P) @ canProduce(KN, KH, m) & recv.x.y.m -> Intruder(v, P, rep, KN, KH))
+Intruder(v, P, rep, KN, KH, KR) =
+  ([] (x, y, m) : SendTuples(v, P) @
+     send.x.y.m -> Intruder(v, P, rep, learnN(KN, m), learnH(KH, m, rep), learnR(KR, x, y, m, rep)))
+  [] ([] (x, y, m) : RecvTuples(v, P) @ canProduce(KN, KH, KR, x, y, m) & recv.x.y.m -> Intruder(v, P, rep, KN, KH, KR))
 
-System(v, P, rep) = (Initiator(v, P) ||| Responder(v)) [| {| send, recv |} |] Intruder(v, P, rep, {Ni}, {})
+System(v, P, rep) = (Initiator(v, P) ||| Responder(v)) [| {| send, recv |} |] Intruder(v, P, rep, {Ni}, {}, {})
 
 -- 認証: commit.B.A の前に running.A.B がある。ほかのイベントを隠して比べる。
 -- 隠さずに全イベントの監視役で比べる形（サイトの checkAuthentication）は、ProB が Events 全体の選択を読めずに落ちたので、ここでは隠す形だけにした。
@@ -50,5 +54,5 @@ Observed(v, P, rep) = System(v, P, rep) \ diff(Events, {running.A.B, commit.B.A}
 
 NSOriginal = Observed(Orig, {B, I}, true)
 NSLowe = Observed(Lowe, {B, I}, true)
-NSNoReplay = Observed(Orig, {B, I}, false)
+NSNoRedirect = Observed(Orig, {B, I}, false)
 NSOnlyB = Observed(Orig, {B}, true)

@@ -2,7 +2,7 @@
 // 値を1つ覚える記憶を、同じ値を全部のディスクに書く制御役で作る（鏡のように書く）。ディスクは crash.i で壊れ、
 // 壊れたディスクは書き込みを黙って捨て、読み出しには err.i を返す。故障のイベントは Lazy 抽象化で隠す
 // （起きてもよいが、起きると当てにしない）。回数を限るときは、故障を数えるプロセスと並べてから隠す。
-// produces: mirroredStore・faultView・registerSpec・toleratedFaults・crashEvents・FAULT_ENV・FAULT_VALUES・CRASH_ONE_RUN
+// produces: mirroredStore・faultView・noFaults・isFaultTolerant・registerSpec・toleratedFaults・crashEvents・FAULT_ENV・FAULT_VALUES・CRASH_ONE_RUN
 // consumes: csp.ts の演算子・lazyAbstraction・failuresRefines。
 
 import {
@@ -126,4 +126,17 @@ export function toleratedFaults(disks: number): number {
     limit += 1;
   }
   return limit;
+}
+
+/** 故障を起こさせない系（本の NoFaults）: 故障のイベントを STOP と同期させる。故障は起きないので隠す必要もない。 */
+export function noFaults(disks: number): Proc {
+  return par(mirroredStore(disks), crashEvents(disks), STOP);
+}
+
+/**
+ * 本の耐故障の定義: NoFaults ⊑F Lazy(系)。故障が（limit 回まで）起きても、故障の無い系より悪くならないか。
+ * 機能の仕様（REG）を満たすかは問わないので、REG との比較は別に調べる（NoFaults について調べれば足りる）。
+ */
+export function isFaultTolerant(disks: number, limit: number | null): boolean {
+  return failuresRefines(noFaults(disks), faultView(disks, limit), FAULT_ENV).holds;
 }

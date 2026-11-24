@@ -27,8 +27,8 @@ describe("名前の付け替えでつなぐパイプとバッファ", () => {
     expect([...visible].sort()).toEqual(["in", "out", "τ"]);
   });
 
-  it("隠す前の2つのセルは、例の実行 [in.0, mid1.0, in.1, out.0] を起こせる", () => {
-    expect(SAMPLE_RUN).toEqual(["in.0", "mid1.0", "in.1", "out.0"]);
+  it("隠す前の2つのセルは、例の実行 [in.0, link1.0, in.1, out.0] を起こせる", () => {
+    expect(SAMPLE_RUN).toEqual(["in.0", "link1.0", "in.1", "out.0"]);
     expect(acceptsTrace(linkedPair(), PIPE_ENV, SAMPLE_RUN).isAccepted).toBe(true);
   });
 });

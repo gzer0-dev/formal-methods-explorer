@@ -144,8 +144,8 @@ export function cspFixpointLesson(language: Language): Lesson {
       {
         label: t("参考", "Reference"),
         value: t(
-          `${TPC_BOOK} 3.1節（隠蔽とガード）・7章（操作的意味論）・8.2節（トレースのモデル）・8.3節（失敗発散のモデル）・9.2節（不動点の解析）`,
-          `${TPC_BOOK_EN}, §3.1 (hiding and guardedness), ch. 7 (operational semantics), §8.2 (the traces model), §8.3 (the failures/divergences model), §9.2 (analysing fixed points)`,
+          `${TPC_BOOK} 1.3節（ガードと不動点の一意性）・3.1節（隠蔽とガード）・7章（操作的意味論）・8.2節（トレースのモデル）・8.3節（失敗発散のモデル）・9.2節（不動点の解析）`,
+          `${TPC_BOOK_EN}, §1.3 (guardedness and unique fixed points), §3.1 (hiding and guardedness), ch. 7 (operational semantics), §8.2 (the traces model), §8.3 (the failures/divergences model), §9.2 (analysing fixed points)`,
         ),
       },
     ],
@@ -402,8 +402,8 @@ export function cspFixpointLesson(language: Language): Lesson {
           `Is there a visible event before each self-call? Ticket machine: ${yesNo(TICKET_GUARDED)}; P = P: ${yesNo(SELF_GUARDED)}`,
         ),
         explain: t(
-          "自分を呼ぶ所がどれも見えるイベントの後ろにある再帰（ガードのある再帰）は、不動点がただ1つに決まり、どのモデルで読んでも同じ意味になる。ガードの無い再帰はモデルによって意味が変わるので、書かないのが安全である。自分を呼ぶ所に隠蔽がかかる再帰も、前置で足したイベントを隠蔽が消すので、ガードに数えない。",
-          "A recursion where every self-call comes after a visible event (a guarded recursion) has exactly one fixed point, so it means the same in every model. An unguarded recursion means different things in different models, so it is safer not to write one. A recursion whose self-call sits inside a hiding does not count as guarded either, because the hiding removes the events the prefix added.",
+          "自分を呼ぶ所がどれも見えるイベントの後ろにある再帰（ガードのある再帰）は、不動点がただ1つに決まり、この本の主なモデルではどれで読んでも同じ意味になる。ガードの無い再帰はモデルによって意味が変わるので、書かないのが安全である。自分を呼ぶ所に隠蔽がかかる再帰も、前置で足したイベントを隠蔽が消すので、ガードに数えない。",
+          "A recursion where every self-call comes after a visible event (a guarded recursion) has exactly one fixed point, so it means the same in each of the main models of the book. An unguarded recursion means different things in different models, so it is safer not to write one. A recursion whose self-call sits inside a hiding does not count as guarded either, because the hiding removes the events the prefix added.",
         ),
         set: {
           equation: { tone: TICKET_GUARDED ? "ok" : "bad" },

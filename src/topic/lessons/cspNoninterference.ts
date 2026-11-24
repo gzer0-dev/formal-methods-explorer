@@ -148,8 +148,8 @@ export function cspNoninterferenceLesson(language: Language): Lesson {
       {
         label: t("参考", "Reference"),
         value: t(
-          `${TPC_BOOK} 12.4節（独立性とセキュリティ）・12.1節（Lazy 抽象化）`,
-          `${TPC_BOOK_EN}, §12.4 (independence and security), §12.1 (lazy abstraction)`,
+          `${TPC_BOOK} 12.4節（資源の取り合いで漏れる類型）・12.1節（Lazy 抽象化）`,
+          `${TPC_BOOK_EN}, §12.4 (the kind of leak through contention for a resource), §12.1 (lazy abstraction)`,
         ),
       },
     ],
@@ -214,8 +214,8 @@ export function cspNoninterferenceLesson(language: Language): Lesson {
           low: { rows: { [t("見えるもの", "sees")]: "lo.*" } },
         },
         simplified: t(
-          `高い利用者が送るのは合わせて${HIGH_JOBS}回までにした。回数を限らないと、隠した高いイベントだけで回る輪（発散）ができ、このサイトの決定性の判定（発散も非決定的に数える）が漏れと関係なく「決定的でない」になるため。本や FDR は、発散を見ない安定失敗モデルで決定性を調べる。`,
-          `The high user sends at most ${HIGH_JOBS} job${HIGH_JOBS === 1 ? "" : "s"} in all. Without a limit, the hidden high events alone would form a loop (divergence), and this site's determinism check, which also counts divergence as nondeterminism, would say "not deterministic" for reasons unrelated to the leak. The book and FDR check determinism in the stable failures model, which ignores divergence.`,
+          `高い利用者が送るのは合わせて${HIGH_JOBS}回までにし、高い側を${HIGH_JOBS}回までに限った系について調べた（本の定義そのものではない）。回数を限らないと、隠した高いイベントだけで回る輪（発散）ができ、このサイトの決定性の判定（発散も非決定的に数える）が漏れと関係なく「決定的でない」になるため。本や FDR は、発散を見ない安定失敗モデルで決定性を調べる。`,
+          `The high user sends at most ${HIGH_JOBS} job${HIGH_JOBS === 1 ? "" : "s"} in all, so what is checked is the system with the high side limited to ${HIGH_JOBS} (not the book's definition itself). Without a limit, the hidden high events alone would form a loop (divergence), and this site's determinism check, which also counts divergence as nondeterminism, would say "not deterministic" for reasons unrelated to the leak. The book and FDR check determinism in the stable failures model, which ignores divergence.`,
         ),
       },
       {

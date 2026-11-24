@@ -430,8 +430,8 @@ export function cspAbpLesson(language: Language): Lesson {
           },
         },
         simplified: t(
-          "通信路は1つしか持てないことにした（実物は何通も抱える）。時間切れは「いつでも送り直してよい」という選択で書き、時間の長さは扱わない。公平性を仮定しないので、無限に落とす・重複させる実行も発散として数える。流す値は 0 と 1 の2つだけにした。",
-          "Each channel holds only one item (real ones hold many). The timeout is written as a choice to resend at any time, and its length is not modelled. No fairness is assumed, so runs that lose or duplicate for ever count as divergence. Only two values, 0 and 1, are passed.",
+          "通信路が渡す・重複・捨てるの3つから内部で選ぶ形は、この題材で古典的に使われる形をなぞった。通信路は1つしか持てないことにした（実物は何通も抱える）。時間切れは「いつでも送り直してよい」という選択で書き、時間の長さは扱わない。公平性を仮定しないので、無限に落とす・重複させる実行も発散として数える。流す値は 0 と 1 の2つだけにした。",
+          "The channel's internal choice of passing, duplicating or throwing away follows the classic form used for this example. Each channel holds only one item (real ones hold many). The timeout is written as a choice to resend at any time, and its length is not modelled. No fairness is assumed, so runs that lose or duplicate for ever count as divergence. Only two values, 0 and 1, are passed.",
         ),
       },
     ],

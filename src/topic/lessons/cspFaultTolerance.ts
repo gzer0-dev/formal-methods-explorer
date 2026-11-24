@@ -10,7 +10,9 @@ import {
   CRASH_ONE_RUN,
   FAULT_ENV,
   faultView,
+  isFaultTolerant,
   mirroredStore,
+  noFaults,
   registerSpec,
   toleratedFaults,
 } from "../cspFaultTolerance";
@@ -26,6 +28,12 @@ const UNLIMITED = failuresRefines(SPEC, faultView(DISKS, null), FAULT_ENV);
 const ONE_FAULT = failuresRefines(SPEC, faultView(DISKS, 1), FAULT_ENV);
 const TWO_FAULTS = failuresRefines(SPEC, faultView(DISKS, 2), FAULT_ENV);
 const SINGLE_DISK_ONE_FAULT = failuresRefines(SPEC, faultView(1, 1), FAULT_ENV);
+// 本の耐故障の定義（NoFaults ⊑F Lazy(系)）でも比べる。機能の仕様（REG）とは別の比較。
+const NO_FAULTS_EQUALS_SPEC =
+  failuresRefines(SPEC, noFaults(DISKS), FAULT_ENV).holds &&
+  failuresRefines(noFaults(DISKS), SPEC, FAULT_ENV).holds;
+const TOLERANT_ONE = isFaultTolerant(DISKS, 1);
+const TOLERANT_TWO = isFaultTolerant(DISKS, 2);
 const TOLERATED = [1, 2, 3].map((disks) => ({ disks, faults: toleratedFaults(disks) }));
 const CRASH_RUN_OK = acceptsTrace(
   mirroredStore(DISKS),
@@ -87,8 +95,8 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
     ),
     intro: [
       t(
-        "耐故障（フォールトトレランス）は、部品が壊れても全体が約束どおりに動き続けることを言う。CSP では、故障を crash のような専用のイベントにしてモデルに入れ、外から見るときにそのイベントを隠して、故障の無い仕様と比べる。故障の回数を限るときは、故障を数えるプロセスと並べてから隠す。",
-        "Fault tolerance means the whole keeps its promises even when parts break. In CSP you put each fault into the model as an event of its own, such as crash, then hide those events when you look from outside and compare with a spec that has no faults. To limit the number of faults, put a process that counts them alongside before hiding.",
+        "耐故障（フォールトトレランス）は、部品が壊れても全体が約束どおりに動き続けることを言う。CSP では、故障を crash のような専用のイベントにしてモデルに入れ、外から見るときにそのイベントを隠して、故障の無い仕様と比べる。故障の回数を限るときは、故障を数えるプロセスと並べてから隠す。なお本の耐故障の定義は、故障を STOP で止めた系（NoFaults）と Lazy で隠した系を比べる NoFaults ⊑ Lazy(系) で、機能の仕様を満たすかは別に調べる。ここでは記憶の仕様と比べて、その二つを一度に見ている。",
+        "Fault tolerance means the whole keeps its promises even when parts break. In CSP you put each fault into the model as an event of its own, such as crash, then hide those events when you look from outside and compare with a spec that has no faults. To limit the number of faults, put a process that counts them alongside before hiding. The book's definition of fault tolerance compares the system with faults blocked by STOP (NoFaults) against the lazily abstracted system, NoFaults ⊑ Lazy(system), and checks the functional spec separately. Here we compare with the store's spec and so look at both at once.",
       ),
       t(
         "テストで故障を試すのは、決まった時点に1つ壊す程度になりやすい。ここでは、どのディスクが、書き込みや読み出しのどの途中で壊れても、の全部を調べる。隠し方は Lazy 抽象化で、「故障は起きてもよいが、起きると当てにしない」を表す。",
@@ -114,6 +122,13 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
         label: t("故障2回まで", "At most two faults"),
         value: failureText(TWO_FAULTS, t),
         tone: TWO_FAULTS.holds ? "ok" : "bad",
+      },
+      {
+        label: t("本の定義 NoFaults ⊑F Lazy(系)", "Book: NoFaults ⊑F Lazy(system)"),
+        value: t(
+          `故障1回まで${TOLERANT_ONE ? "耐える" : "耐えない"}・2回まで${TOLERANT_TWO ? "耐える" : "耐えない"}`,
+          `${TOLERANT_ONE ? "tolerant" : "not tolerant"} of one fault, ${TOLERANT_TWO ? "tolerant" : "not tolerant"} of two`,
+        ),
       },
       {
         label: t("許せる故障の回数", "Faults tolerated"),
@@ -300,12 +315,12 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
         actor: "limit",
         to: ["checker"],
         summary: t(
-          `上限0（故障を止める）では、仕様を${holds(NO_FAULTS.holds)}`,
-          `With limit 0 (faults blocked), the spec ${holds(NO_FAULTS.holds)}`,
+          `上限0（故障を止めた系 NoFaults）は仕様を${holds(NO_FAULTS.holds)}。NoFaults と仕様は失敗で${NO_FAULTS_EQUALS_SPEC ? "等しい" : "等しくない"}`,
+          `With limit 0 (the system with faults blocked, NoFaults) the spec ${holds(NO_FAULTS.holds)}; NoFaults and the spec are ${NO_FAULTS_EQUALS_SPEC ? "equal" : "not equal"} in failures`,
         ),
         explain: t(
-          "故障を数えるプロセスの上限を0にすると、crash は1回も起きない。故障の無い部品だけの動きで、まず仕様を満たすことを確かめておく。これが崩れていたら、故障以前に設計が間違っている。",
-          "With the counting process's limit at 0, no crash ever happens. First confirm that the parts alone, with no faults, meet the spec. If this fails, the design is wrong before any fault.",
+          "故障を数えるプロセスの上限を0にすると、crash は1回も起きない。故障の無い部品だけの動き（本の NoFaults）で、まず仕様を満たすことを確かめておく。本が勧める「機能の仕様は NoFaults について調べる」に当たり、これが崩れていたら、故障以前に設計が間違っている。",
+          "With the counting process's limit at 0, no crash ever happens. First confirm that the parts alone, with no faults (the book's NoFaults), meet the spec. This is the book's advice to check the functional spec on NoFaults; if it fails, the design is wrong before any fault.",
         ),
         set: {
           limit: { isHidden: false, rows: { [t("上限", "limit")]: "0" } },
@@ -348,8 +363,8 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
           `With limit 1, the spec ${holds(ONE_FAULT.holds)} whichever disk fails, whenever`,
         ),
         explain: t(
-          `故障を1回までに限ると、書き込みの途中でも読み出しの途中でも、どちらのディスクが壊れても、もう1台が最後に書いた値を持っている。ディスクが1台だけだと、上限1で仕様を${holds(SINGLE_DISK_ONE_FAULT.holds)}（${failureText(SINGLE_DISK_ONE_FAULT, t)}）。`,
-          `With at most one fault, whichever disk breaks, even in the middle of a write or a read, the other still holds the last value written. With only one disk, limit 1 makes the spec ${holds(SINGLE_DISK_ONE_FAULT.holds)} (it ${failureText(SINGLE_DISK_ONE_FAULT, t)}).`,
+          `故障を1回までに限ると、書き込みの途中でも読み出しの途中でも、どちらのディスクが壊れても、もう1台が最後に書いた値を持っている。本の定義（NoFaults ⊑F Lazy(系)）でも、故障1回までなら${TOLERANT_ONE ? "耐える" : "耐えない"}。ディスクが1台だけだと、上限1で仕様を${holds(SINGLE_DISK_ONE_FAULT.holds)}（${failureText(SINGLE_DISK_ONE_FAULT, t)}）。`,
+          `With at most one fault, whichever disk breaks, even in the middle of a write or a read, the other still holds the last value written. By the book's definition (NoFaults ⊑F Lazy(system)) it is also ${TOLERANT_ONE ? "tolerant" : "not tolerant"} of one fault. With only one disk, limit 1 makes the spec ${holds(SINGLE_DISK_ONE_FAULT.holds)} (it ${failureText(SINGLE_DISK_ONE_FAULT, t)}).`,
         ),
         set: {
           limit: { tone: "ok", rows: { [t("上限", "limit")]: "1" } },
@@ -359,7 +374,12 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
           },
           checker: {
             tone: ONE_FAULT.holds ? "ok" : "bad",
-            rows: { [t("結果", "result")]: holds(ONE_FAULT.holds) },
+            rows: {
+              [t("結果", "result")]: holds(ONE_FAULT.holds),
+              ["NoFaults ⊑F"]: TOLERANT_ONE
+                ? t("耐える", "tolerant")
+                : t("耐えない", "not tolerant"),
+            },
           },
         },
       },
@@ -374,8 +394,8 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
           `With limit 2, it ${failureText(TWO_FAULTS, t)}`,
         ),
         explain: t(
-          `2台とも壊れると、制御役は読む値を取れずに止まり、書き込みも読み出しも受け付けない。故障は隠してあるので、反例のトレースに crash は出ず、外から見ると何もしていないのに${store}が応えなくなる。`,
-          "Once both disks have broken, the controller cannot fetch a value and stops, accepting neither writes nor reads. Faults are hidden, so no crash appears in the counterexample's trace: from outside, the store stops answering without anything having happened.",
+          `2台とも壊れると、制御役は読む値を取れずに止まり、書き込みも読み出しも受け付けない。故障は隠してあるので、反例のトレースに crash は出ず、外から見ると何もしていないのに${store}が応えなくなる。本の定義でも${TOLERANT_TWO ? "耐える" : "耐えない"}（故障の無い系は断らないので）。`,
+          `Once both disks have broken, the controller cannot fetch a value and stops, accepting neither writes nor reads. Faults are hidden, so no crash appears in the counterexample's trace: from outside, the store stops answering without anything having happened. By the book's definition the verdict is also "${TOLERANT_TWO ? "tolerant" : "not tolerant"}" (the fault-free system never refuses).`,
         ),
         set: {
           limit: { tone: "bad", rows: { [t("上限", "limit")]: "2" } },
@@ -383,7 +403,12 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
           disk2: { tone: "bad", rows: { [t("状態", "state")]: t("壊れた", "failed") } },
           checker: {
             tone: TWO_FAULTS.holds ? "ok" : "bad",
-            rows: { [t("結果", "result")]: holds(TWO_FAULTS.holds) },
+            rows: {
+              [t("結果", "result")]: holds(TWO_FAULTS.holds),
+              ["NoFaults ⊑F"]: TOLERANT_TWO
+                ? t("耐える", "tolerant")
+                : t("耐えない", "not tolerant"),
+            },
           },
         },
       },
@@ -409,6 +434,7 @@ export function cspFaultToleranceLesson(language: Language): Lesson {
               [t("隠す", "hides")]: null,
               [t("方法", "method")]: null,
               [t("結果", "result")]: null,
+              ["NoFaults ⊑F"]: null,
               ...Object.fromEntries(
                 TOLERATED.map(({ disks, faults }) => [
                   t(`${disks}台`, `${disks} disk${disks === 1 ? "" : "s"}`),

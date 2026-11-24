@@ -2,13 +2,16 @@
 // 時間の1刻みを、全員が同期する tock で表す。「依頼から n tock 以内に応答する」は、依頼の後・応答の前に
 // n+1 回目の tock が来ないというトレースの仕様になる。安全性なので、時間を止めてしまう（tock を断る）モデルは
 // 空虚に満たしてしまう。そこで tock 以外を隠して TICKING（tock をずっと続ける）と比べ、時間が進み続けるかを別に調べる。
-// produces: TOCK_ENV・server・deadlineSpec・checkDeadline・checkTimeProgress・TICKING ／ consumes: csp.ts の演算子と詳細化。
+// request は環境の入力なので遅らせてよい（Lazy 抽象化）。request まで普通に隠すと、環境が無限の速さで依頼できる前提になる。
+// produces: TOCK_ENV・server・deadlineSpec・checkDeadline・checkTimeProgress・checkTimeProgressEager・TICKING ／ consumes: csp.ts の演算子と詳細化。
 
 import {
   type Env,
   ext,
   failuresDivergencesRefines,
+  failuresRefines,
   hide,
+  lazyAbstraction,
   pre,
   type Proc,
   ref,
@@ -68,11 +71,24 @@ export function checkDeadline(deadline: number, impl: Proc) {
 }
 
 /**
- * 時間が進み続けるか: tock 以外（request・reply）を隠し、TICKING ⊑FD と比べる。
- * 隠したイベントはすぐ起きる（τ）とみなすので、安定した状態で tock を断れば「時間が止まる」失敗、
- * tock を挟まずに回れる輪があれば発散（有限の時間に無限の動き）として反例になる。
+ * 時間が進み続けるか（環境の入力を遅らせてよいとする形）。request は依頼する側（環境）からの入力なので、
+ * 環境がいつ送ってもよく、送らずに待たせてもよい。そこで request は Lazy 抽象化（いつでも起きうるが、起きなくてもよい）で隠し、
+ * サーバー自身の出力 reply は普通に隠して、TICKING と安定失敗で比べる。安定した状態で tock を断れば「時間が止まる」反例になる。
+ * Lazy 抽象化は発散を生むので、発散は見ない（⊑F）。
  */
 export function checkTimeProgress(impl: Proc) {
+  return failuresRefines(
+    TICKING,
+    hide(lazyAbstraction(impl, ["request"]), ["reply"]),
+    TOCK_ENV,
+  );
+}
+
+/**
+ * 比べるための形: request まで普通に隠して ⊑FD で比べる。これは「環境が request をいくらでも速く送れる」と仮定したことになり、
+ * tock を挟まずに依頼と応答を繰り返せるサーバーは発散（有限の時間に無限の動き）として反例になる。
+ */
+export function checkTimeProgressEager(impl: Proc) {
   return failuresDivergencesRefines(
     TICKING,
     hide(impl, ["request", "reply"]),

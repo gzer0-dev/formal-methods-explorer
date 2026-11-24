@@ -24,3 +24,10 @@ OnTimeClock = OnTime \ {request, reply}
 SlowClock = Slow \ {request, reply}
 StuckClock = Stuck \ {request, reply}
 ZenoClock = Zeno \ {request, reply}
+
+-- request は環境の入力なので遅らせてよい: Lazy 抽象化（CHAOS と同期させてから隠す）で隠し、reply は普通に隠して ⊑F で比べる。
+LazyRequest(P) = (P [| {request} |] CHAOS({request})) \ {request, reply}
+OnTimeLazy = LazyRequest(OnTime)
+SlowLazy = LazyRequest(Slow)
+StuckLazy = LazyRequest(Stuck)
+ZenoLazy = LazyRequest(Zeno)

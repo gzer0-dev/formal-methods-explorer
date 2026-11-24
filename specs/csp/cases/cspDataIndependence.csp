@@ -11,10 +11,14 @@ Cell1(n) = in?x:Vals(n) -> mid!x -> Cell1(n)
 Cell2(n) = mid?x:Vals(n) -> out!x -> Cell2(n)
 CellPair(n) = (Cell1(n) [| {| mid |} |] Cell2(n)) \ {| mid |}
 
--- 多数決: 3つ読み、2つ以上そろった値を出す。3つとも違えば止まる。
-majority(a, b, c) = if a == b or a == c then a else if b == c then b else -1
-Voter(n) = in?a:Vals(n) -> in?b:Vals(n) -> in?c:Vals(n) ->
-  (if majority(a, b, c) >= 0 then out!majority(a, b, c) -> Voter(n) else STOP)
+-- 重複よけ: 直近に渡した値を k 個まで覚え、覚えている値なら捨てる。新しい値は渡して覚え、あふれたら最も古いものを忘れる。
+keepLast(s, k) = if #s > k then keepLast(tail(s), k) else s
+Dedup(mem, k, n) = in?x:Vals(n) ->
+  (if elem(x, mem) then Dedup(mem, k, n) else out!x -> Dedup(keepLast(mem ^ <x>, k), k, n))
+-- 仕様: どの値も高々1回しか渡さない。初めての値は渡しても渡さなくてもよい。
+Unique(passed, n) = in?x:Vals(n) ->
+  (if member(x, passed) then Unique(passed, n)
+   else (out!x -> Unique(union(passed, {x}), n)) |~| Unique(passed, n))
 
 FifoSpec1 = Fifo(<>, 1)
 FifoSpec2 = Fifo(<>, 2)
@@ -25,9 +29,11 @@ CellPair3 = CellPair(3)
 Stack1 = Stack(<>, 1)
 Stack2 = Stack(<>, 2)
 Stack3 = Stack(<>, 3)
-Voter2 = Voter(2)
-Voter3 = Voter(3)
+Unique2 = Unique({}, 2)
+Unique3 = Unique({}, 3)
+Dedup2 = Dedup(<>, 2, 2)
+Dedup3 = Dedup(<>, 2, 3)
 
 -- 3つ目の値 2 を 1 に付け替える（src/topic/cspDataIndependence.ts の collapseTopValue と同じ）。
 Stack3Collapsed = Stack3[[in.2 <- in.1, out.2 <- out.1]]
-Voter3Collapsed = Voter3[[in.2 <- in.1, out.2 <- out.1]]
+Dedup3Collapsed = Dedup3[[in.2 <- in.1, out.2 <- out.1]]

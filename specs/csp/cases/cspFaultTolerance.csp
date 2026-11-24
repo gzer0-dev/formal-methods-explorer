@@ -31,3 +31,8 @@ View2Limit2 = View(2, 2)
 View2Unlimited = LazyFaults(2, Store(2))
 View3Limit2 = View(3, 2)
 View3Limit3 = View(3, 3)
+
+-- 本の耐故障の定義: 故障を STOP で止めた系（NoFaults）⊑F Lazy で抽象化した系。
+NoFaults(n) = Store(n) [| Crashes(n) |] STOP
+NoFaults1 = NoFaults(1)
+NoFaults2 = NoFaults(2)

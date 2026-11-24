@@ -5,7 +5,9 @@ import {
   crashEvents,
   FAULT_ENV,
   faultView,
+  isFaultTolerant,
   mirroredStore,
+  noFaults,
   registerSpec,
   toleratedFaults,
 } from "./cspFaultTolerance";
@@ -59,6 +61,26 @@ describe("故障を隠して耐故障を示す（鏡のように書く2台のデ
     expect(crashEvents(3)).toEqual(["crash.1", "crash.2", "crash.3"]);
     for (const limit of [0, 1, 2, null]) {
       expect(divergence(faultView(2, limit), FAULT_ENV)).toBeNull();
+    }
+  });
+
+  it("本の定義（NoFaults ⊑F Lazy(系)）でも、2台は故障1回まで耐え、2回では耐えない", () => {
+    expect(isFaultTolerant(2, 0)).toBe(true);
+    expect(isFaultTolerant(2, 1)).toBe(true);
+    expect(isFaultTolerant(2, 2)).toBe(false);
+    expect(isFaultTolerant(1, 1)).toBe(false);
+    expect(isFaultTolerant(3, 2)).toBe(true);
+    expect(isFaultTolerant(3, 3)).toBe(false);
+  });
+
+  it("故障を止めた系（NoFaults）は記憶の仕様と失敗で等しい（機能の仕様は NoFaults で調べれば足りる）", () => {
+    for (const disks of [1, 2, 3]) {
+      expect(failuresRefines(registerSpec(), noFaults(disks), FAULT_ENV).holds).toBe(
+        true,
+      );
+      expect(failuresRefines(noFaults(disks), registerSpec(), FAULT_ENV).holds).toBe(
+        true,
+      );
     }
   });
 });

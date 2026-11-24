@@ -3,7 +3,10 @@
 const file = "cases/cspFaultTolerance.csp";
 
 export default ({ runProb, succeeded, failed }) => {
-  const refines = (impl) => () => runProb(["-cspref", "Spec", "[F=", impl], file);
+  const refines =
+    (impl, spec = "Spec") =>
+    () =>
+      runProb(["-cspref", spec, "[F=", impl], file);
   return [
     {
       name: "耐故障: 故障を起こさせないと、ディスク1台で記憶の仕様を満たす",
@@ -40,6 +43,26 @@ export default ({ runProb, succeeded, failed }) => {
       name: "耐故障: ディスク3台は故障3回で破れる",
       run: refines("View3Limit3"),
       expect: failed,
+    },
+    {
+      name: "耐故障（本の定義 NoFaults ⊑F Lazy）: 2台は故障1回まで耐える",
+      run: refines("View2Limit1", "NoFaults2"),
+      expect: succeeded,
+    },
+    {
+      name: "耐故障（本の定義 NoFaults ⊑F Lazy）: 2台は故障2回で耐えない",
+      run: refines("View2Limit2", "NoFaults2"),
+      expect: failed,
+    },
+    {
+      name: "耐故障（本の定義 NoFaults ⊑F Lazy）: 1台は故障1回で耐えない",
+      run: refines("View1Limit1", "NoFaults1"),
+      expect: failed,
+    },
+    {
+      name: "耐故障: 故障を止めた系は記憶の仕様と失敗で等しい（逆向き）",
+      run: refines("Spec", "NoFaults2"),
+      expect: succeeded,
     },
   ];
 };

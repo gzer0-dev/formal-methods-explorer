@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { checkLaw, deadlocks, explore, failuresRefines, traceRefines } from "./csp";
+import { checkLaw, explore, failuresRefines, traceRefines } from "./csp";
 import {
   collapseTopValue,
   DATA_ENV,
@@ -7,7 +7,8 @@ import {
   fifoSpec,
   stackBuffer,
   valuesOf,
-  voter,
+  dedupFilter,
+  uniqueSpec,
 } from "./cspDataIndependence";
 
 describe("データ独立性", () => {
@@ -42,24 +43,50 @@ describe("データ独立性", () => {
     expect(sizes[1]!).toBeGreaterThan(sizes[0]!);
   });
 
-  it("多数決は値を比べるので、値が2つなら止まらないが、3つなら [in.0, in.1, in.2] で止まる", () => {
-    expect(deadlocks(voter(1), DATA_ENV)).toEqual([]);
-    expect(deadlocks(voter(2), DATA_ENV)).toEqual([]);
-    expect(deadlocks(voter(3), DATA_ENV)[0]).toEqual(["in.0", "in.1", "in.2"]);
-  });
-
   it("値を比べないスタックは、3つ目の値を2つ目に写すと、値2つのスタックと区別できない", () => {
     const law = checkLaw(collapseTopValue(stackBuffer(3), 3), stackBuffer(2), DATA_ENV);
     expect(law).toEqual({ traces: true, failures: true, failuresDivergences: true });
   });
 
-  it("多数決は、3つ目の値を2つ目に写すと値2つの多数決と違うものになる（止まる道が残る）", () => {
-    const law = checkLaw(collapseTopValue(voter(3), 3), voter(2), DATA_ENV);
-    expect(law.failures).toBe(false);
-    expect(deadlocks(collapseTopValue(voter(3), 3), DATA_ENV)[0]).toEqual([
+  it("直近2つを覚える重複よけは、値が1つか2つなら同じ値を2回渡さない", () => {
+    for (const count of [1, 2]) {
+      expect(
+        traceRefines(uniqueSpec(count), dedupFilter(2, count), DATA_ENV).holds,
+      ).toBe(true);
+    }
+  });
+
+  it("直近2つを覚える重複よけは、値が3つになると、忘れた0をもう一度渡す", () => {
+    const result = traceRefines(uniqueSpec(3), dedupFilter(2, 3), DATA_ENV);
+    expect(result.holds).toBe(false);
+    expect(result.counterexample).toEqual([
       "in.0",
+      "out.0",
       "in.1",
-      "in.1",
+      "out.1",
+      "in.2",
+      "out.2",
+      "in.0",
+      "out.0",
     ]);
+  });
+
+  it("覚える数を k にすると、値が k 個までは成り立ち、k+1 個で破れる", () => {
+    for (const memory of [1, 2, 3]) {
+      for (const count of [1, 2, 3, 4]) {
+        const holds = traceRefines(
+          uniqueSpec(count),
+          dedupFilter(memory, count),
+          DATA_ENV,
+        ).holds;
+        expect(holds).toBe(count <= memory);
+      }
+    }
+  });
+
+  it("重複よけは値を比べるので、3つ目の値を2つ目に写すと値2つの版と違うものになる", () => {
+    const collapsed = collapseTopValue(dedupFilter(2, 3), 3);
+    expect(checkLaw(collapsed, dedupFilter(2, 2), DATA_ENV).traces).toBe(false);
+    expect(traceRefines(uniqueSpec(2), collapsed, DATA_ENV).holds).toBe(false);
   });
 });

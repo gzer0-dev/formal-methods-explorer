@@ -1,16 +1,16 @@
 // データ独立性（Roscoe TPC 15.3 の範囲。例は自作）。
 // 値を運ぶだけで、値どうしを比べもしないプロセスは、値の種類を増やしても振る舞いの形が変わらない（本の定義は等しいかどうかの比較を許すが、
 // 値2つで足りるという結果は比較の無いプロセスについてのもの）。だから値を2つにして調べた結論が、値を3つ（それ以上）にしても同じになる。
-// 値を比べる多数決では、値2つでは足りない。
-// produces: DATA_ENV・valuesOf・fifoSpec・fifoPair・stackBuffer・voter・collapseTopValue・CAPACITY・READINGS
+// 値を比べる重複よけ（直近 k 個を覚え、覚えている値なら捨てる）では、値2つでは足りない。
+// produces: DATA_ENV・valuesOf・fifoSpec・fifoPair・stackBuffer・dedupFilter・uniqueSpec・collapseTopValue・CAPACITY・FILTER_MEMORY
 // consumes: csp.ts の演算子。
 
-import { type Env, type Proc, STOP, ext, hide, par, pre, ref, rename } from "./csp";
+import { type Env, type Proc, ext, hide, int, par, pre, ref, rename } from "./csp";
 
 /** 溜められる数。 */
 export const CAPACITY = 2;
-/** 多数決が1回に読む値の数。 */
-export const READINGS = 3;
+/** 重複よけが覚えておく値の数（レッスンの既定）。 */
+export const FILTER_MEMORY = 2;
 
 /** 値の種類が count 個のときの値（0, 1, …）。 */
 export function valuesOf(count: number): number[] {
@@ -60,21 +60,39 @@ export const DATA_ENV: Env = {
         pre(`${entry}.${x}`, pre(`${exit}.${x}`, ref("CELL", entry, exit, count))),
       ),
     ),
-  // 多数決: 値を3つ読み、2つ以上そろった値を出す。そろわなければ何もできなくなる（3つとも違う値は想定していなかった）。
-  VOTER: (readings: string, count: number) => {
-    const items = parseList(readings);
-    if (items.length < READINGS)
-      return ext(
-        ...valuesOf(count).map((x) =>
-          pre(`in.${x}`, ref("VOTER", [...items, x].join(","), count)),
-        ),
-      );
-    const majority = items.find(
-      (x) => items.filter((other) => other === x).length * 2 > items.length,
+  // 重複よけ: 直近に渡した値を memory 個まで覚え、覚えている値が来たら捨てる。新しい値は渡して覚え、あふれたら最も古いものを忘れる。
+  DEDUP: (remembered: string, memory: number, count: number) => {
+    const items = parseList(remembered);
+    return ext(
+      ...valuesOf(count).map((x) =>
+        items.includes(x)
+          ? pre(`in.${x}`, ref("DEDUP", remembered, memory, count))
+          : pre(
+              `in.${x}`,
+              pre(
+                `out.${x}`,
+                ref("DEDUP", [...items, x].slice(-memory).join(","), memory, count),
+              ),
+            ),
+      ),
     );
-    return majority === undefined
-      ? STOP
-      : pre(`out.${majority}`, ref("VOTER", "", count));
+  },
+  // 仕様: どの値も高々1回しか渡さない。初めての値は渡しても渡さなくてもよい（内部で選ぶ）。一度渡した値は捨てる。
+  UNIQUE: (passed: string, count: number) => {
+    const items = parseList(passed);
+    return ext(
+      ...valuesOf(count).map((x) =>
+        items.includes(x)
+          ? pre(`in.${x}`, ref("UNIQUE", passed, count))
+          : pre(
+              `in.${x}`,
+              int(
+                pre(`out.${x}`, ref("UNIQUE", [...items, x].sort().join(","), count)),
+                ref("UNIQUE", passed, count),
+              ),
+            ),
+      ),
+    );
   },
 };
 
@@ -97,9 +115,14 @@ export function stackBuffer(count: number): Proc {
   return ref("STACK", "", CAPACITY, count);
 }
 
-/** 3つの値で多数決をとる。 */
-export function voter(count: number): Proc {
-  return ref("VOTER", "", count);
+/** 直近 memory 個を覚える重複よけ。 */
+export function dedupFilter(memory: number, count: number): Proc {
+  return ref("DEDUP", "", memory, count);
+}
+
+/** 仕様: どの値も高々1回しか渡さない。 */
+export function uniqueSpec(count: number): Proc {
+  return ref("UNIQUE", "", count);
 }
 
 /**

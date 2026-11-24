@@ -218,8 +218,8 @@ export function cspSecurityProtocolLesson(language: Language): Lesson {
           "I receives every message sent and delivers every message received; I is also a legitimate user",
         ),
         explain: t(
-          "侵入者 I は、A と B の間のネットワークとして書く。pkI の文は開けて中の nonce を知り、開けない文はそのまま覚えて送り直せる。知っている nonce からは、誰の公開鍵でも暗号化して新しい文を作れる。I は自分の鍵を持つ普通の利用者でもあるので、A が I と話すこともある。",
-          "The intruder I is written as the network between A and B. It opens messages under pkI and learns the nonces inside; messages it cannot open it keeps as they are and can resend. From the nonces it knows, it can build new messages encrypted with anyone's public key. I is also an ordinary user with its own key, so A may talk to I.",
+          "侵入者 I は、A と B の間のネットワークとして書く。pkI の文は開けて中の nonce を知り、開けない文はそのまま覚え、名乗る送り手や宛先を変えて届け直せる。知っている nonce からは、誰の公開鍵でも暗号化して新しい文を作れる。I は自分の鍵を持つ普通の利用者でもあるので、A が I と話すこともある。",
+          "The intruder I is written as the network between A and B. It opens messages under pkI and learns the nonces inside; messages it cannot open it keeps as they are and can deliver again under a different sender name or to a different recipient. From the nonces it knows, it can build new messages encrypted with anyone's public key. I is also an ordinary user with its own key, so A may talk to I.",
         ),
         set: { intruder: { isHidden: false, tone: "wait", rows: knowledgeRows(0) } },
       },
@@ -431,27 +431,27 @@ export function cspSecurityProtocolLesson(language: Language): Lesson {
           },
         },
         simplified: t(
-          "A と B はそれぞれ1回だけ実行し、nonce は Na・Nb・Ni の3つ、名前は A・B・I に固定した。侵入者が扱う文も、A と B が送る文・受け付ける文に限った。実物の解析（Lowe の FDR の解析など）は、実行の回数や侵入者の作れる文を増やして調べる。暗号は破れないと仮定している。",
-          "A and B each run only once, and the nonces are fixed to Na, Nb and Ni and the names to A, B and I. The messages the intruder deals with are limited to those A and B send and accept. Real analyses (such as Lowe's analysis with FDR) increase the number of runs and the messages the intruder can build. The encryption is assumed to be unbreakable.",
+          "A と B はそれぞれ1回だけ実行し、nonce は Na・Nb・Ni の3つ、名前は A・B・I に固定した。侵入者が扱う文も、A と B が送る文・受け付ける文に限った。このように小さな系で調べて攻撃が無くても、それだけでは実行の回数や名前を増やした大きな系でも安全とは言えず、広げるための議論が別に要る（15.4節の末尾）。暗号は破れないと仮定している。性質は Lowe の書き方（running と commit の合図）で書いた。本の15.4節の性質の書き方とは違う。",
+          "A and B each run only once, and the nonces are fixed to Na, Nb and Ni and the names to A, B and I. The messages the intruder deals with are limited to those A and B send and accept. Finding no attack in a small system like this does not by itself show that a larger one, with more runs or names, is safe; a separate argument is needed to extend the result (end of §15.4). The encryption is assumed to be unbreakable. The property is written in Lowe's style, with running and commit signals; this differs from how §15.4 of the book states it.",
         ),
       },
     ],
     lab: {
       title: t("版と侵入者の力を変える", "Change the version and the intruder"),
       hint: t(
-        "版（0=元の版、1=Lowe の修正）、A が I とも話すか（1=話す、0=B とだけ）、侵入者が暗号文を送り直せるか（1=できる、0=できない）を入れる。攻撃が見つかるのは、元の版で、A が I とも話し、送り直せるときだけ。",
-        "Enter the version (0 = original, 1 = Lowe's fix), whether A also talks to I (1 = yes, 0 = only B) and whether the intruder can resend ciphertexts (1 = yes, 0 = no). An attack is found only for the original, when A also talks to I and resending is allowed.",
+        "版（0=元の版、1=Lowe の修正）、A が I とも話すか（1=話す、0=B とだけ）、侵入者が暗号文の宛先や送り手の名前を変えられるか（1=できる、0=元のまま中継だけ）を入れる。攻撃が見つかるのは、元の版で、A が I とも話し、宛先を変えられるときだけ。",
+        "Enter the version (0 = original, 1 = Lowe's fix), whether A also talks to I (1 = yes, 0 = only B) and whether the intruder can change the recipient or sender name of ciphertexts (1 = yes, 0 = relay unchanged only). An attack is found only for the original, when A also talks to I and redirecting is allowed.",
       ),
       inputs: [
         { id: "version", label: t("版", "Version"), initial: "0" },
         { id: "talksToI", label: t("A が I と話す", "A talks to I"), initial: "1" },
-        { id: "replay", label: t("送り直せる", "Can resend"), initial: "1" },
+        { id: "redirect", label: t("宛先を変えられる", "Can redirect"), initial: "1" },
       ],
       compute: (values): Field[] => {
         const options: ProtocolOptions = {
           version: parseFlag(values.version, false) ? "lowe" : "original",
           partners: parseFlag(values.talksToI, true) ? ["B", "I"] : ["B"],
-          canReplay: parseFlag(values.replay, true),
+          canRedirect: parseFlag(values.redirect, true),
         };
         const result = checkAuthentication(options);
         const states = explore(protocolSystem(options), NS_ENV).stateCount;

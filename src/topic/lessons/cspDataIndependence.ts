@@ -1,15 +1,16 @@
 import { translator, type Language } from "../../core/i18n";
 import type { Field, Lesson } from "../../core/types";
-import { checkLaw, deadlocks, explore, failuresRefines, traceRefines } from "../csp";
+import { checkLaw, explore, failuresRefines, traceRefines } from "../csp";
 import {
   CAPACITY,
   collapseTopValue,
   DATA_ENV,
+  dedupFilter,
   fifoPair,
   fifoSpec,
-  READINGS,
+  FILTER_MEMORY,
   stackBuffer,
-  voter,
+  uniqueSpec,
 } from "../cspDataIndependence";
 import { TPC_BOOK, TPC_BOOK_EN } from "../references";
 
@@ -36,11 +37,29 @@ const STACK_COLLAPSE = checkLaw(
   stackBuffer(2),
   DATA_ENV,
 );
-const VOTER_TWO = deadlocks(voter(2), DATA_ENV);
-const VOTER_THREE = deadlocks(voter(3), DATA_ENV);
-const VOTER_COLLAPSE = checkLaw(collapseTopValue(voter(3), 3), voter(2), DATA_ENV);
-const VOTER_COLLAPSED_STOP =
-  deadlocks(collapseTopValue(voter(3), 3), DATA_ENV)[0] ?? [];
+const FILTER_TWO = traceRefines(uniqueSpec(2), dedupFilter(FILTER_MEMORY, 2), DATA_ENV);
+const FILTER_THREE = traceRefines(
+  uniqueSpec(3),
+  dedupFilter(FILTER_MEMORY, 3),
+  DATA_ENV,
+);
+const FILTER_COLLAPSED = collapseTopValue(dedupFilter(FILTER_MEMORY, 3), 3);
+const FILTER_COLLAPSE_SAME = checkLaw(
+  FILTER_COLLAPSED,
+  dedupFilter(FILTER_MEMORY, 2),
+  DATA_ENV,
+).traces;
+const FILTER_COLLAPSE_BREAKS = !traceRefines(uniqueSpec(2), FILTER_COLLAPSED, DATA_ENV)
+  .holds;
+const MEMORIES = [1, 2, 3] as const;
+const MAX_COUNT = 4;
+// 覚える数ごとに、仕様を破る最も少ない値の種類（値1〜MAX_COUNT で破れなければ null）。
+const FIRST_BREAKING = MEMORIES.map((memory) => {
+  for (let count = 1; count <= MAX_COUNT; count += 1)
+    if (!traceRefines(uniqueSpec(count), dedupFilter(memory, count), DATA_ENV).holds)
+      return count;
+  return null;
+});
 
 function listText(events: string[], language: Language): string {
   if (events.length === 0) return language === "ja" ? "⟨⟩（空）" : "⟨⟩ (empty)";
@@ -78,8 +97,8 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
       "Why shrinking the set of values need not change the answer",
     ),
     summary: t(
-      `値を比べないスタックは、受け取った順に渡す仕様を破るが、値1つで調べると見逃し、値2つでも3つでも同じ反例 ${listText(STACK_TWO.counterexample ?? [], language)} が見つかる。値を比べる多数決は、値2つでは止まらず、値3つで ${listText(VOTER_THREE[0] ?? [], language)} の後に止まる。`,
-      `A stack, which never compares values, slips past a spec that passes values on in order with one value, and breaks it with the same counterexample ${listText(STACK_TWO.counterexample ?? [], language)} with two values and with three. A majority voter, which compares values, never stops with two values but stops after ${listText(VOTER_THREE[0] ?? [], language)} with three.`,
+      `値を比べないスタックは、受け取った順に渡す仕様を破るが、値1つで調べると見逃し、値2つでも3つでも同じ反例 ${listText(STACK_TWO.counterexample ?? [], language)} が見つかる。直近${FILTER_MEMORY}つを覚えて重複を捨てる仕組みは値を比べるので、値2つでは仕様との ⊑T が${holdsText(FILTER_TWO.holds)}が、値3つで忘れた値をもう一度渡す。`,
+      `A stack, which never compares values, slips past a spec that passes values on in order with one value, and breaks it with the same counterexample ${listText(STACK_TWO.counterexample ?? [], language)} with two values and with three. A filter that remembers the last ${FILTER_MEMORY} values and drops repeats compares values: with two values the spec ${holdsText(FILTER_TWO.holds)}, but with three it passes on a forgotten value a second time.`,
     ),
     intro: [
       t(
@@ -91,8 +110,8 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         "Model checking gets more states as the number of values grows, and tests cannot try every value either. If we know how many values are enough, an exhaustive search of a small model tells us the result holds for any values. But for a process that compares values or branches on them, the number needed goes up.",
       ),
       t(
-        "図では、上の段の「値の種類」を1つ・2つ・3つと増やしながら、検査器の結果が変わるかを見る。前半は値を比べないスタック、後半は値を比べる多数決である。",
-        'In the diagram, raise "values" in the top row from one to two to three and see whether the checker\'s result changes. The first half uses a stack that never compares values; the second half a majority voter that does.',
+        "図では、上の段の「値の種類」を1つ・2つ・3つと増やしながら、検査器の結果が変わるかを見る。前半は値を比べないスタック、後半は値を比べる重複よけである。",
+        'In the diagram, raise "values" in the top row from one to two to three and see whether the checker\'s result changes. The first half uses a stack that never compares values; the second half a repeat filter that does.',
       ),
     ],
     facts: [
@@ -111,12 +130,15 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         ),
       },
       {
-        label: t("多数決のデッドロック", "Voter deadlock"),
-        value: t(
-          `値2つ: ${VOTER_TWO.length === 0 ? "なし" : "あり"}、値3つ: ${VOTER_THREE.length === 0 ? "なし" : listText(VOTER_THREE[0]!, language)}`,
-          `2 values: ${VOTER_TWO.length === 0 ? "none" : "found"}; 3: ${VOTER_THREE.length === 0 ? "none" : listText(VOTER_THREE[0]!, language)}`,
+        label: t(
+          `重複よけ（${FILTER_MEMORY}つ覚える）と仕様（⊑T）`,
+          `Repeat filter (remembers ${FILTER_MEMORY}) vs spec (⊑T)`,
         ),
-        tone: VOTER_THREE.length > 0 ? "bad" : "ok",
+        value: t(
+          `値2つ: ${holdsText(FILTER_TWO.holds)}、値3つ: ${FILTER_THREE.holds ? holdsText(true) : listText(FILTER_THREE.counterexample ?? [], language)}`,
+          `2 values: ${holdsText(FILTER_TWO.holds)}; 3: ${FILTER_THREE.holds ? holdsText(true) : listText(FILTER_THREE.counterexample ?? [], language)}`,
+        ),
+        tone: FILTER_THREE.holds ? "ok" : "bad",
       },
       {
         label: t("参考", "Reference"),
@@ -156,11 +178,11 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         y: 27,
       },
       {
-        id: "voter",
-        label: t("多数決", "Majority voter"),
+        id: "filter",
+        label: t("重複よけ", "Repeat filter"),
         sublabel: t(
-          `${READINGS}つ読み、多い方を出す`,
-          `reads ${READINGS}, outputs the majority`,
+          `直近${FILTER_MEMORY}つを覚える`,
+          `remembers the last ${FILTER_MEMORY}`,
         ),
         icon: "process",
         x: 50,
@@ -179,7 +201,7 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
     links: [
       { from: "values", to: "stack" },
       { from: "stack", to: "spec" },
-      { from: "values", to: "voter" },
+      { from: "values", to: "filter" },
       { from: "spec", to: "checker" },
     ],
     steps: [
@@ -220,8 +242,8 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
           `With only the value 0, the stack ${STACK_ONE.holds ? "meets" : "breaks"} the spec under ⊑T (${STACK_STATES[0]} states)`,
         ),
         explain: t(
-          "値が1種類しかないと、出す順を入れ替えても出てくるのは同じ0の並びなので、順の違いが外から見えない。値の種類を小さくしすぎると、こうして誤りを見逃す。",
-          "With only one value, swapping the order still produces the same row of 0s, so the difference in order is invisible from outside. Make the set of values too small and an error slips past like this.",
+          "値が1種類しかないと、出す順を入れ替えても出てくるのは同じ0の並びなので、順の違いが外から見えない。値の種類を小さくしすぎると、こうして誤りを見逃す。この仕様は値の中身（出す順）を気にするので、値1つで足りる場合には当たらない。",
+          "With only one value, swapping the order still produces the same row of 0s, so the difference in order is invisible from outside. Make the set of values too small and an error slips past like this. This spec cares about the values themselves (their order), so it is not a case where one value is enough.",
         ),
         set: {
           values: { tone: "wait", rows: { [countRow]: valuesText(1) } },
@@ -313,31 +335,38 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         },
       },
       {
-        id: "voter",
+        id: "filter",
         kind: "spec",
-        title: t("値を比べる多数決", "A voter compares values"),
-        actor: "voter",
+        title: t("値を比べる重複よけ", "A filter compares values"),
+        actor: "filter",
+        to: ["spec"],
         summary: t(
-          `多数決は値を${READINGS}つ読み、2つ以上そろった値を出す。そろわないときの動きは書いていない`,
-          `The voter reads ${READINGS} values and outputs one that appears at least twice. What to do when none do is not written`,
+          `重複よけは直近に渡した値を${FILTER_MEMORY}つまで覚え、覚えている値が来たら捨てる。仕様は「どの値も高々1回しか渡さない」`,
+          `The filter remembers up to the last ${FILTER_MEMORY} values it passed on and drops any value it remembers. The spec: never pass on the same value twice`,
         ),
         explain: t(
-          `3重にした計器の読みから多数を採る、といった場面を想定した。値を比べ、その結果で分岐するので、値2つで足りるという条件から外れる。値が2つしかなければ、${READINGS}つ読むとどれか2つは必ずそろう。`,
-          `Picture taking the majority of three readings from triplicated sensors. It compares values and branches on the result, so it falls outside the condition under which two values are enough. With only two values, any ${READINGS} readings always include two that match.`,
+          `同じ通知を何度も送らないよう、最近送った分だけを覚えておく仕組みを想定した。新しい値は渡して覚え、あふれたら最も古いものを忘れる。来た値を覚えている値と比べ、その結果で分岐するので、値2つで足りるという条件から外れる。値が2つだけなら両方とも覚えておけるので、仕様との ⊑T が${holdsText(FILTER_TWO.holds)}。`,
+          `Picture a mechanism that avoids sending the same notification twice by remembering only what it sent recently. A new value is passed on and remembered, and the oldest is forgotten when memory is full. It compares each value with the remembered ones and branches on the result, so it falls outside the condition under which two values are enough. With only two values it can remember both, so the spec ${holdsText(FILTER_TWO.holds)}.`,
         ),
         set: {
-          voter: {
+          filter: {
             isHidden: false,
             rows: { [t("値を比べる", "compares values")]: t("する", "yes") },
           },
+          spec: {
+            rows: {
+              [t("出す順", "order out")]: null,
+              [t("同じ値", "same value")]: t("高々1回", "at most once"),
+            },
+          },
           values: { tone: "idle", rows: { [countRow]: valuesText(2) } },
           checker: {
-            tone: VOTER_TWO.length === 0 ? "ok" : "bad",
+            tone: FILTER_TWO.holds ? "ok" : "bad",
             rows: {
               [countRow]: "2",
               [resultRow]: t(
-                `デッドロック${VOTER_TWO.length === 0 ? "なし" : "あり"}`,
-                VOTER_TWO.length === 0 ? "no deadlock" : "deadlock",
+                `⊑T ${holdsText(FILTER_TWO.holds)}`,
+                `⊑T ${holdsText(FILTER_TWO.holds)}`,
               ),
               [t("正しいセルの列", "correct cells")]: null,
             },
@@ -345,40 +374,46 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         },
       },
       {
-        id: "voter-three",
+        id: "filter-three",
         kind: "found",
-        title: t("値3つで止まる", "Three values stop it"),
+        title: t("値3つで2回渡す", "Three values, passed twice"),
         actor: "checker",
-        to: ["voter"],
+        to: ["filter"],
         summary: t(
-          `値が3つになると、${listText(VOTER_THREE[0] ?? [], language)} の後に何もできなくなる`,
-          `With three values, it can do nothing after ${listText(VOTER_THREE[0] ?? [], language)}`,
+          `値が3つになると、${listText(FILTER_THREE.counterexample ?? [], language)} で同じ値を2回渡す`,
+          `With three values, ${listText(FILTER_THREE.counterexample ?? [], language)} passes the same value on twice`,
         ),
         explain: t(
-          `3つとも違う読みは、値が3種類以上あって初めて起こる。値2を1に写すと、この並びは ${listText(VOTER_COLLAPSED_STOP, language)} に見えるのに止まったままなので、値2つの多数決とは等しく${VOTER_COLLAPSE.failures ? "なる" : "ならない"}。値を比べるプロセスでは、値2つで調べた結論を持ち越せない。`,
-          `Three different readings can only happen once there are at least three values. Mapping 2 to 1 makes this run look like ${listText(VOTER_COLLAPSED_STOP, language)}, yet it is still stuck, so it is ${VOTER_COLLAPSE.failures ? "equal" : "not equal"} to the two-value voter. For a process that compares values, a conclusion checked with two values does not carry over.`,
+          `3つの違う値を渡すと、覚えていられるのは後の${FILTER_MEMORY}つだけで、最初の値を忘れる。次に最初の値が来ると新しい値として渡してしまう。値2を1に写したものは値2つの重複よけと${FILTER_COLLAPSE_SAME ? "区別できない" : "区別でき"}、仕様も${FILTER_COLLAPSE_BREAKS ? "破る" : "破らない"}。値を比べるプロセスでは、値2つで調べた結論を持ち越せるとは限らない。`,
+          `After three different values, only the last ${FILTER_MEMORY} are remembered and the first is forgotten. When the first value comes again, it is passed on as new. The version with 2 mapped to 1 ${FILTER_COLLAPSE_SAME ? "cannot be told apart from" : "can be told apart from"} the two-value filter and ${FILTER_COLLAPSE_BREAKS ? "breaks" : "meets"} the spec. For a process that compares values, a conclusion checked with two values does not necessarily carry over.`,
         ),
         set: {
           values: { tone: "bad", rows: { [countRow]: valuesText(3) } },
-          voter: {
+          filter: {
             tone: "bad",
             rows: {
-              [t("読んだ", "read")]: (VOTER_THREE[0] ?? [])
+              [t("覚えている", "remembers")]: (FILTER_THREE.counterexample ?? [])
+                .filter((event) => event.startsWith("out."))
+                .slice(-1 - FILTER_MEMORY, -1)
                 .map((event) => event.split(".")[1])
                 .join(", "),
             },
           },
           checker: {
-            tone: VOTER_THREE.length > 0 ? "bad" : "ok",
+            tone: FILTER_THREE.holds ? "ok" : "bad",
             rows: {
               [countRow]: "3",
               [resultRow]: t(
-                `デッドロック${VOTER_THREE.length === 0 ? "なし" : "あり"}`,
-                VOTER_THREE.length === 0 ? "no deadlock" : "deadlock",
+                `⊑T ${holdsText(FILTER_THREE.holds)}`,
+                `⊑T ${holdsText(FILTER_THREE.holds)}`,
               ),
             },
           },
         },
+        simplified: t(
+          "本では、等しいときにだけ先へ進む比較なら、値を比べても多くの結果がそのまま保たれるとしている。この重複よけは等しくないときに値を渡すので、それには当たらない。",
+          "The book notes that comparisons which only let the process go on when values are equal keep many of these results. This filter passes a value on when it is not equal, so it is not such a case.",
+        ),
       },
       {
         id: "threshold",
@@ -387,37 +422,50 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
         actor: "checker",
         to: ["values"],
         summary: t(
-          "値を比べるプロセスでも、覚えておく値の数と比べ方から、調べれば足りる値の数を見積もれる",
-          "Even for a process that compares values, how many values it keeps and how it compares them tell you how many values are enough to check",
+          `覚える数を1・2・3にすると、仕様を破る最も少ない値の種類は${FIRST_BREAKING.map((count) => count ?? "なし").join("・")}`,
+          `Remembering 1, 2 or 3 values, the fewest values that break the spec are ${FIRST_BREAKING.map((count) => count ?? "none").join(", ")}`,
         ),
         explain: t(
-          `多数決は読んだ値を2つ覚えてから3つ目と比べるので、すべて違う場合を作るには値が${READINGS}つ要る。値を比べるときは、値2つで済ませず、必要な数を見積もってから調べる。見積もりの式は本の15.3節にある。`,
-          `The voter keeps two readings and compares them with the third, so making all of them different takes ${READINGS} values. When values are compared, do not settle for two; estimate the number needed first and then check. The formulas for the estimate are in §15.3 of the book.`,
+          "値を忘れさせるには、覚えておける数より多い種類の値が要る。だから覚える数が増えると、調べるのに要る値の種類も増える。値を比べるときは、値2つで済ませず、覚える値の数と比べ方から必要な数を見積もってから調べる。見積もりの条件は本の15.3節にある。",
+          "To make the filter forget a value takes more kinds of value than it can remember. So the more it remembers, the more values the check needs. When values are compared, do not settle for two; estimate the number needed from how many values are kept and how they are compared, then check. The conditions for the estimate are in §15.3 of the book.",
         ),
         set: {
           values: {
             tone: "ok",
-            rows: { [countRow]: t(`${READINGS}つ以上`, `${READINGS} or more`) },
+            rows: { [countRow]: t("覚える数+1", "memory + 1") },
           },
+          filter: { tone: "idle" },
         },
         simplified: t(
-          "見積もりの数は、このページでは計算していない（値1〜4で実際に調べた結果だけを示している）。本では、仕様が値をどう使うか・値をいくつ覚えるか・1回に何個の値を受け取るかから、足りる数を求める条件を述べている。",
-          "This page does not compute the estimate; it only shows results actually checked with one to four values. The book gives conditions for finding a sufficient number from how the spec uses values, how many values are kept, and how many are taken in one event.",
+          `見積もりの数は、このページでは式から計算していない（覚える数1〜3・値1〜${MAX_COUNT}で実際に調べた結果だけを示している）。本では、仕様が値をどう使うか・値をいくつ覚えるか・1回に何個の値を受け取るかから、足りる数を求める条件を述べている。`,
+          `This page does not compute the estimate from a formula; it only shows results actually checked with memory 1 to 3 and 1 to ${MAX_COUNT} values. The book gives conditions for finding a sufficient number from how the spec uses values, how many values are kept, and how many are taken in one event.`,
         ),
       },
     ],
     lab: {
       title: t("値の種類を変える", "Change the number of values"),
       hint: t(
-        "値の種類（1〜4）を入れる。スタックは2つ以上で同じ反例になり、多数決は3つ以上で止まる。",
-        "Enter the number of values (1-4). The stack gives the same counterexample from two upwards, and the voter stops from three upwards.",
+        "値の種類（1〜4）と、重複よけが覚える数（1〜3）を入れる。スタックは値2つ以上で同じ反例になり、重複よけは値の種類が覚える数より多いと破れる。",
+        "Enter the number of values (1-4) and how many the filter remembers (1-3). The stack gives the same counterexample from two values upwards, and the filter fails once there are more values than it remembers.",
       ),
-      inputs: [{ id: "count", label: t("値の種類", "Values"), initial: "2" }],
+      inputs: [
+        { id: "count", label: t("値の種類", "Values"), initial: "2" },
+        {
+          id: "memory",
+          label: t("覚える数", "Memory"),
+          initial: String(FILTER_MEMORY),
+        },
+      ],
       compute: (values): Field[] => {
         const count = parseCount(values.count, 2, 4);
         const stack = traceRefines(fifoSpec(count), stackBuffer(count), DATA_ENV);
         const cells = failuresRefines(fifoSpec(count), fifoPair(count), DATA_ENV);
-        const stops = deadlocks(voter(count), DATA_ENV);
+        const memory = parseCount(values.memory, FILTER_MEMORY, 3);
+        const filter = traceRefines(
+          uniqueSpec(count),
+          dedupFilter(memory, count),
+          DATA_ENV,
+        );
         return [
           {
             label: t("スタック ⊑T", "Stack ⊑T"),
@@ -435,15 +483,14 @@ export function cspDataIndependenceLesson(language: Language): Lesson {
             tone: cells.holds ? "ok" : "bad",
           },
           {
-            label: t("多数決のデッドロック", "Voter deadlock"),
-            value:
-              stops.length === 0
-                ? t("なし", "none")
-                : t(
-                    `${listText(stops[0]!, language)} の後`,
-                    `after ${listText(stops[0]!, language)}`,
-                  ),
-            tone: stops.length === 0 ? "ok" : "bad",
+            label: t("重複よけ ⊑T", "Filter ⊑T"),
+            value: filter.holds
+              ? holdsText(true)
+              : t(
+                  `${holdsText(false)}（${listText(filter.counterexample ?? [], language)}）`,
+                  `${holdsText(false)} (${listText(filter.counterexample ?? [], language)})`,
+                ),
+            tone: filter.holds ? "ok" : "bad",
           },
           {
             label: t("スタックの状態", "Stack states"),

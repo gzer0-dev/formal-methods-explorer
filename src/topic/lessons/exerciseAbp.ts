@@ -4,6 +4,7 @@ import { traceRefines } from "../csp";
 import { ABP_ENV, abpSpec, abpSystem, NO_BIT_RUN } from "../cspAbp";
 import { lazy } from "../exercise";
 import { buildExerciseLesson } from "../exerciseLesson";
+import { TPC_BOOK, TPC_BOOK_EN } from "../references";
 
 // 演習: 交互ビットプロトコルでビットを使わない（いつも0）と、故障の無い通信路でも仕様を破る。最短の反例は見えるイベント何個か。
 // 問題の条件（故障なし・ビットなし・仕様は1要素のバッファ）は csp-abp のレッスンの「ビットが無いと2回渡す」と同じ。
@@ -251,6 +252,13 @@ export function exerciseAbpLesson(language: Language): Lesson {
         {
           label: t("出題範囲", "Covers"),
           value: t("交互ビットプロトコル", '"The alternating bit protocol"'),
+        },
+        {
+          label: t("参考", "Reference"),
+          value: t(
+            `${TPC_BOOK} 5.3節（交互ビットプロトコル）`,
+            `${TPC_BOOK_EN}, §5.3 (the alternating bit protocol)`,
+          ),
         },
       ],
       actors: [
