@@ -17,6 +17,7 @@ export type Proc =
   | { k: "par"; l: Proc; sync: string[]; r: Proc } // 並行合成 [| sync |]
   | { k: "hide"; p: Proc; set: string[] } // 隠蔽 \ set
   | { k: "seq"; l: Proc; r: Proc } // 逐次合成 ;
+  | { k: "rename"; p: Proc; pairs: [string, string][] } // 名前の付け替え P[[a <- b]]
   | { k: "ref"; name: string; args: (string | number)[] };
 
 /** 名前付きのプロセスの定義。再帰はここを名前で引く。 */
@@ -47,6 +48,11 @@ export function hide(p: Proc, set: string[]): Proc {
 export function seq(l: Proc, r: Proc): Proc {
   return { k: "seq", l, r };
 }
+/** 名前の付け替え P[[from <- to]]。同じ from に複数の to を書くと、どれの名前でも起こせる（関係による付け替え）。 */
+export function rename(p: Proc, pairs: [string, string][]): Proc {
+  const sorted = [...pairs].sort((x, y) => (x[0] + x[1]).localeCompare(y[0] + y[1]));
+  return { k: "rename", p, pairs: sorted };
+}
 export function ref(name: string, ...args: (string | number)[]): Proc {
   return { k: "ref", name, args };
 }
@@ -72,6 +78,8 @@ export function procKey(p: Proc): string {
       return `(${procKey(p.p)} \\ {${p.set.join(",")}})`;
     case "seq":
       return `(${procKey(p.l)} ; ${procKey(p.r)})`;
+    case "rename":
+      return `${procKey(p.p)}[[${p.pairs.map(([from, to]) => `${from}<-${to}`).join(",")}]]`;
     case "ref":
       return p.args.length > 0 ? `${p.name}(${p.args.join(",")})` : p.name;
   }
@@ -193,6 +201,17 @@ function computeMoves(p: Proc, env: Env): Move[] {
           ? { ev: TAU, to: p.r, rule: "SeqTick" }
           : { ev: m.ev, to: seq(m.to, p.r), rule: "Seq" },
       );
+    case "rename": {
+      // τ と ✓ は付け替えない。付け替えの表に無いイベントは、そのままの名前で起きる。
+      return moves(p.p, env).flatMap((m) => {
+        if (m.ev === TICK) return [{ ev: TICK, to: OMEGA, rule: "RenTick" }];
+        const next = rename(m.to, p.pairs);
+        if (m.ev === TAU) return [{ ev: TAU, to: next, rule: "RenTau" }];
+        const targets = p.pairs.filter(([from]) => from === m.ev).map(([, to]) => to);
+        if (targets.length === 0) return [{ ev: m.ev, to: next, rule: "Ren" }];
+        return targets.map((to) => ({ ev: to, to: next, rule: "Ren" }));
+      });
+    }
     case "ref":
       return moves(unfold(p, env), env).map((m) => ({ ...m, rule: "PName" }));
   }

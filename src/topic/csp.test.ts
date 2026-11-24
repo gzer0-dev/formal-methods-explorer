@@ -16,6 +16,7 @@ import {
   par,
   pre,
   ref,
+  rename,
   seq,
   SKIP,
   STOP,
@@ -286,5 +287,13 @@ describe("Lazy 抽象化（隠すイベントを、環境が勝手に止めら�
     const lazy = lazyAbstraction(ref("P"), ["h"]);
     expect(divergence(eager, env)).not.toBeNull();
     expect(failuresRefines(pre("a", STOP), lazy, env).holds).toBe(true);
+  });
+});
+
+describe("名前の付け替え P[[a <- b]]", () => {
+  it("付け替えたイベントは新しい名前で起き、付け替えないイベントはそのまま", () => {
+    const p = rename(pre("a", pre("c", STOP)), [["a", "b"]]);
+    expect(moves(p, {}).map((m) => m.ev)).toEqual(["b"]);
+    expect(traceTo(p, {}, "c")).toEqual(["b", "c"]);
   });
 });
