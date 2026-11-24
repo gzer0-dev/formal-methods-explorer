@@ -28,6 +28,7 @@ import { exerciseSortTestLesson } from "./lessons/exerciseSortTest";
 import { exerciseDeterminismLesson } from "./lessons/exerciseDeterminism";
 import { exerciseInboxLesson } from "./lessons/exerciseInbox";
 import { cspFdLesson } from "./lessons/cspFd";
+import { cspPipesLesson } from "./lessons/cspPipes";
 import { cspLawsLesson } from "./lessons/cspLaws";
 import { cspRulesLesson } from "./lessons/cspRules";
 import { cspAbstractionLesson } from "./lessons/cspAbstraction";
@@ -76,6 +77,7 @@ const LESSON_SOURCES: LessonSource[] = [
   cspDeadlockLesson,
   cspLivelockLesson,
   cspFdLesson,
+  cspPipesLesson,
   cspLawsLesson,
   cspRulesLesson,
   cspDeterminismLesson,

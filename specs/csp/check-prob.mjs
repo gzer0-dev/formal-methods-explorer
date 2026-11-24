@@ -369,6 +369,28 @@ const cases = [
     expect: failed,
     trace: ["assign.CA.s1", "assign.CB.s1"],
   },
+  // 名前の付け替えでつなぐパイプとバッファ
+  {
+    name: "パイプ: セルを2つつなぐと、2要素のバッファの仕様を ⊑F で満たす",
+    run: () => runProb(["-cspref", "PBuff2", "[F=", "PChain2"]),
+    expect: succeeded,
+  },
+  {
+    name: "パイプ: 2要素のバッファの仕様も、セル2つのパイプを ⊑F で満たす（両向きで等しい）",
+    run: () => runProb(["-cspref", "PChain2", "[F=", "PBuff2"]),
+    expect: succeeded,
+  },
+  {
+    name: "パイプ: セル1つは、1つ入れた後に次の入力を断るので ⊑F で破れる",
+    run: () => runProb(["-cspref", "PBuff2", "[F=", "PChain1"]),
+    expect: failed,
+  },
+  {
+    name: "パイプ: セル3つは [pin.0, pin.0, pin.0] で ⊑T を破る",
+    run: () => runProb(["-cspref", "PBuff2", "[T=", "PChain3"]),
+    expect: failed,
+    trace: ["pin.0", "pin.0", "pin.0"],
+  },
 ];
 
 let failures = 0;

@@ -175,3 +175,12 @@ SessionForgetful = (SClient(CA) ||| SClient(CB)) [| {| assign, release |} |] For
 Exclusive = [] cl : {CA, CB} @ assign.cl.s1 -> release.cl.s1 -> Exclusive
 SessionViewOk = SessionSystem \ diff(Events, {assign.CA.s1, assign.CB.s1, release.CA.s1, release.CB.s1})
 SessionViewBug = SessionForgetful \ diff(Events, {assign.CA.s1, assign.CB.s1, release.CA.s1, release.CB.s1})
+
+-- 名前の付け替えでつなぐパイプとバッファ（src/topic/cspPipes.ts。Roscoe TPC 3.2・4.1・5.1 の範囲、例は自作）
+channel pin, pout, pmid1, pmid2 : {0, 1}
+PCopy = pin?x -> pout!x -> PCopy
+PChain1 = PCopy
+PChain2 = (PChain1[[pout <- pmid1]] [| {| pmid1 |} |] PCopy[[pin <- pmid1]]) \ {| pmid1 |}
+PChain3 = (PChain2[[pout <- pmid2]] [| {| pmid2 |} |] PCopy[[pin <- pmid2]]) \ {| pmid2 |}
+PBuff(q, n) = (#q < n & pin?x -> PBuff(q ^ <x>, n)) [] (#q > 0 & pout!head(q) -> PBuff(tail(q), n))
+PBuff2 = PBuff(<>, 2)
