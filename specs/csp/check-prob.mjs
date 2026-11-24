@@ -8,9 +8,10 @@
 // サイトの検査器は ✓ で終わった状態をデッドロックに数えないので、その差もここで固定して見張る。
 
 import { spawnSync } from "node:child_process";
+import { existsSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const probcli =
@@ -392,6 +393,19 @@ const cases = [
     trace: ["pin.0", "pin.0", "pin.0"],
   },
 ];
+
+// レッスンごとの照合は specs/csp/cases/*.mjs に分けて置ける（手分けして足すときに、このファイルを取り合わないため）。
+// 各ファイルは default export で ({ runProb, succeeded, failed }) => 照合の配列 を返す。CSPM は同じフォルダの別の .csp に書き、
+// runProb(args, "ファイル名.csp") で読ませる（Models.csp に書き足さない）。
+const caseDir = join(here, "cases");
+if (existsSync(caseDir)) {
+  for (const file of readdirSync(caseDir)
+    .filter((name) => name.endsWith(".mjs"))
+    .sort()) {
+    const module = await import(pathToFileURL(join(caseDir, file)).href);
+    cases.push(...module.default({ runProb, succeeded, failed }));
+  }
+}
 
 let failures = 0;
 for (const testCase of cases) {
